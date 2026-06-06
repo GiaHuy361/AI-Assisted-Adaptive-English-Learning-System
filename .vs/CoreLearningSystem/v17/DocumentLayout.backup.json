@@ -1,0 +1,177 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{69FC4625-0C35-4285-88F5-26EA1CBD743B}|src\\CoreLearningSystem.Infrastructure\\CoreLearningSystem.Infrastructure.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.infrastructure\\migrations\\20260603084111_addlastlogindatetouser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{69FC4625-0C35-4285-88F5-26EA1CBD743B}|src\\CoreLearningSystem.Infrastructure\\CoreLearningSystem.Infrastructure.csproj|solutionrelative:src\\corelearningsystem.infrastructure\\migrations\\20260603084111_addlastlogindatetouser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.api\\controllers\\goalscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|solutionrelative:src\\corelearningsystem.api\\controllers\\goalscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.api\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|solutionrelative:src\\corelearningsystem.api\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.api\\controllers\\apicontrollerbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|solutionrelative:src\\corelearningsystem.api\\controllers\\apicontrollerbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BD4D7561-A77E-4CEE-859C-BF1704D0D614}|src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.application\\features\\quizzes\\quizfeatures.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BD4D7561-A77E-4CEE-859C-BF1704D0D614}|src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj|solutionrelative:src\\corelearningsystem.application\\features\\quizzes\\quizfeatures.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.api\\corelearningsystem.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{3481AF5E-F3F2-466D-B282-F0FF552BEB26}|src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj|solutionrelative:src\\corelearningsystem.api\\corelearningsystem.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1A677FED-ECBF-42CD-B55D-630A80016378}|src\\CoreLearningSystem.Domain\\CoreLearningSystem.Domain.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.domain\\corelearningsystem.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{1A677FED-ECBF-42CD-B55D-630A80016378}|src\\CoreLearningSystem.Domain\\CoreLearningSystem.Domain.csproj|solutionrelative:src\\corelearningsystem.domain\\corelearningsystem.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BD4D7561-A77E-4CEE-859C-BF1704D0D614}|src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj|d:\\hoctap\\ki8\\prn232\\ai-assisted-adaptive-english-learning-system-be\\src\\corelearningsystem.application\\corelearningsystem.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{BD4D7561-A77E-4CEE-859C-BF1704D0D614}|src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj|solutionrelative:src\\corelearningsystem.application\\corelearningsystem.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "20260603084111_AddLastLoginDateToUser.cs",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Infrastructure\\Migrations\\20260603084111_AddLastLoginDateToUser.cs",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.Infrastructure\\Migrations\\20260603084111_AddLastLoginDateToUser.cs",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Infrastructure\\Migrations\\20260603084111_AddLastLoginDateToUser.cs",
+              "RelativeToolTip": "src\\CoreLearningSystem.Infrastructure\\Migrations\\20260603084111_AddLastLoginDateToUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-06T03:38:29.834Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GoalsController.cs",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\Controllers\\GoalsController.cs",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.API\\Controllers\\GoalsController.cs",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\Controllers\\GoalsController.cs",
+              "RelativeToolTip": "src\\CoreLearningSystem.API\\Controllers\\GoalsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-05T05:35:43.387Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DashboardController.cs",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\Controllers\\DashboardController.cs",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.API\\Controllers\\DashboardController.cs",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\Controllers\\DashboardController.cs",
+              "RelativeToolTip": "src\\CoreLearningSystem.API\\Controllers\\DashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-05T05:35:41.668Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "QuizFeatures.cs",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Application\\Features\\Quizzes\\QuizFeatures.cs",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.Application\\Features\\Quizzes\\QuizFeatures.cs",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Application\\Features\\Quizzes\\QuizFeatures.cs",
+              "RelativeToolTip": "src\\CoreLearningSystem.Application\\Features\\Quizzes\\QuizFeatures.cs",
+              "ViewState": "AgIAALEAAAAAAAAAAAA9wMkAAABaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-03T06:51:26.939Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ApiControllerBase.cs",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\Controllers\\ApiControllerBase.cs",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.API\\Controllers\\ApiControllerBase.cs",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\Controllers\\ApiControllerBase.cs",
+              "RelativeToolTip": "src\\CoreLearningSystem.API\\Controllers\\ApiControllerBase.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-01T09:32:19.228Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "CoreLearningSystem.API.csproj",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj",
+              "RelativeToolTip": "src\\CoreLearningSystem.API\\CoreLearningSystem.API.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-01T09:32:14.328Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "CoreLearningSystem.Domain.csproj",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Domain\\CoreLearningSystem.Domain.csproj",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.Domain\\CoreLearningSystem.Domain.csproj",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Domain\\CoreLearningSystem.Domain.csproj",
+              "RelativeToolTip": "src\\CoreLearningSystem.Domain\\CoreLearningSystem.Domain.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-01T09:31:39.934Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "CoreLearningSystem.Application.csproj",
+              "DocumentMoniker": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj",
+              "RelativeDocumentMoniker": "src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj",
+              "ToolTip": "D:\\hoctap\\ki8\\PRN232\\AI-Assisted-Adaptive-English-Learning-System-BE\\src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj",
+              "RelativeToolTip": "src\\CoreLearningSystem.Application\\CoreLearningSystem.Application.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-01T09:31:37.311Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

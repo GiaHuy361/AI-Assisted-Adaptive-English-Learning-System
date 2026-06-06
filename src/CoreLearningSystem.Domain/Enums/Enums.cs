@@ -1,0 +1,59 @@
+namespace CoreLearningSystem.Domain.Enums;
+
+public enum UserRole
+{
+    Admin,
+    Learner
+}
+
+public enum EnglishLevel
+{
+    None,
+    A1,
+    A2,
+    B1,
+    B2,
+    C1,
+    C2,
+    PlacementTest
+}
+
+public enum ActivityStatus
+{
+    Active,
+    Inactive,
+    Suspended
+}
+
+public enum SkillType
+{
+    Listening,
+    Reading,
+    Speaking,
+    Writing,
+    Grammar,
+    Vocabulary,
+    General
+}
+
+public enum LessonStatus
+{
+    Draft,
+    Published,
+    Archived
+}
+
+public enum LearningPathStatus
+{
+    NotStarted,
+    InProgress,
+    Completed
+}
+
+public enum GoalType
+{
+    TOEIC,
+    IELTS,
+    VSTEP,
+    General
+}

@@ -1,0 +1,16 @@
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\bin\Release\net8.0\CoreLearningSystem.Application.deps.json
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\bin\Release\net8.0\CoreLearningSystem.Application.dll
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\bin\Release\net8.0\CoreLearningSystem.Application.pdb
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\bin\Release\net8.0\CoreLearningSystem.Domain.dll
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\bin\Release\net8.0\CoreLearningSystem.Domain.pdb
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.csproj.AssemblyReference.cache
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.AssemblyInfoInputs.cache
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.AssemblyInfo.cs
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.csproj.CoreCompileInputs.cache
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.sourcelink.json
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLear.1CB1B474.Up2Date
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.dll
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\refint\CoreLearningSystem.Application.dll
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\CoreLearningSystem.Application.pdb
+D:\hoctap\ki8\PRN232\AI-Assisted-Adaptive-English-Learning-System\src\CoreLearningSystem.Application\obj\Release\net8.0\ref\CoreLearningSystem.Application.dll
