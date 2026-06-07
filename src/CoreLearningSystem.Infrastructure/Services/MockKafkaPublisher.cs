@@ -36,4 +36,10 @@ public class MockKafkaPublisher : IKafkaPublisher
         Console.WriteLine($"[Kafka Mock] FeedbackSubmittedEvent fired: LearnerId={ev.LearnerProfileId}, Rating={ev.Rating}");
         return Task.CompletedTask;
     }
+
+    public Task PublishAsync(string topic, string key, object message)
+    {
+        Console.WriteLine($"[Kafka Mock] Generic PublishAsync: topic={topic}, key={key}, type={message.GetType().Name}");
+        return Task.CompletedTask;
+    }
 }

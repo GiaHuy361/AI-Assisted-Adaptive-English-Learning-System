@@ -7,4 +7,6 @@ public static class TopicNames
     public const string FeedbackSubmitted = "feedback-submitted";
     public const string PlacementTestCompleted = "placement-test-completed";
     public const string DeadLetterTopic = "dead-letter-topic";
+    public const string GoalCompleted = "goal-completed";
+    public const string BadgeAwarded = "badge-awarded";
 }

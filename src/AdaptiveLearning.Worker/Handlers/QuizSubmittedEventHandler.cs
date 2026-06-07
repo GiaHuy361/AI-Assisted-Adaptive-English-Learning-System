@@ -19,6 +19,9 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
     private readonly ISkillMatrixService _skillMatrixService;
     private readonly IRepository<LearnerProfile> _profileRepo;
     private readonly IRecommendationService _recommendationService;
+    private readonly IGoalTrackingService _goalTrackingService;
+    private readonly IAchievementService _achievementService;
+    private readonly IKafkaPublisher _kafkaPublisher;
     private readonly ILogger<QuizSubmittedEventHandler> _logger;
 
     public QuizSubmittedEventHandler(
@@ -26,12 +29,18 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
         ISkillMatrixService skillMatrixService,
         IRepository<LearnerProfile> profileRepo,
         IRecommendationService recommendationService,
+        IGoalTrackingService goalTrackingService,
+        IAchievementService achievementService,
+        IKafkaPublisher kafkaPublisher,
         ILogger<QuizSubmittedEventHandler> logger)
     {
         _grpcClient = grpcClient;
         _skillMatrixService = skillMatrixService;
         _profileRepo = profileRepo;
         _recommendationService = recommendationService;
+        _goalTrackingService = goalTrackingService;
+        _achievementService = achievementService;
+        _kafkaPublisher = kafkaPublisher;
         _logger = logger;
     }
 
@@ -191,6 +200,69 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
                 _logger.LogInformation("Recommended Lesson: LessonId: {LessonId}, Title: {Title}, Score: {Score}, Reason: {Reason}",
                     recLesson.LessonId, recLesson.Title, recLesson.PriorityScore, recLesson.Reason);
             }
+
+            // 1. Update Quiz Goal
+            var quizGoalRequest = new GoalProgressRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                SourceEventId = $"{ev.EventId}_quiz",
+                TriggerGoalType = GoalType.QuizzesPerWeek,
+                IncrementValue = 1.0,
+                OccurredAt = ev.SubmittedAt.UtcDateTime
+            };
+            var quizGoalResult = await _goalTrackingService.UpdateGoalProgressAsync(quizGoalRequest, default);
+
+            // 2. Update SkillScore Goals
+            foreach (var score in skillScores)
+            {
+                var skillGoalRequest = new GoalProgressRequest
+                {
+                    UserId = ev.UserId,
+                    LearnerProfileId = profile.Id,
+                    SourceEventId = $"{ev.EventId}_skill_{score.Skill}",
+                    TriggerGoalType = GoalType.SkillScore,
+                    SkillName = score.Skill.ToString(),
+                    NewSkillScore = score.Score,
+                    OccurredAt = ev.SubmittedAt.UtcDateTime
+                };
+                var skillGoalResult = await _goalTrackingService.UpdateGoalProgressAsync(skillGoalRequest, default);
+                if (skillGoalResult.CompletedGoals != null)
+                {
+                    quizGoalResult.CompletedGoals.AddRange(skillGoalResult.CompletedGoals);
+                }
+            }
+
+            // Publish completed goals
+            if (quizGoalResult.CompletedGoals != null)
+            {
+                foreach (var completedGoal in quizGoalResult.CompletedGoals)
+                {
+                    var goalCompletedEvent = new GoalCompletedEvent
+                    {
+                        UserId = ev.UserId,
+                        LearnerProfileId = profile.Id,
+                        GoalId = completedGoal.GoalId,
+                        GoalType = completedGoal.GoalType,
+                        Title = completedGoal.Title,
+                        TargetValue = completedGoal.TargetValue,
+                        AchievedValue = completedGoal.AchievedValue,
+                        CompletedAt = completedGoal.CompletedAt
+                    };
+                    await _kafkaPublisher.PublishAsync(AdaptiveLearning.Contracts.Topics.TopicNames.GoalCompleted, completedGoal.GoalId.ToString(), goalCompletedEvent);
+                }
+            }
+
+            // 3. Evaluate and Award Achievements
+            var achievementRequest = new AchievementEvaluationRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                SourceEventId = ev.EventId.ToString(),
+                Trigger = AchievementTrigger.QuizSubmitted,
+                OccurredAt = ev.SubmittedAt.UtcDateTime
+            };
+            await _achievementService.EvaluateAndAwardAsync(achievementRequest, default);
         }
         catch (Exception ex)
         {

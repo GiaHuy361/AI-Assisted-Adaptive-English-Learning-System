@@ -54,6 +54,7 @@ public class RecommendationTests : IDisposable
         _profileRepo = new Repository<LearnerProfile>(_context);
         _progressRepo = new Repository<LearnerProgress>(_context);
         _weaknessRepo = new Repository<LearnerWeaknessHistory>(_context);
+        var goalRepo = new Repository<GoalSetting>(_context);
 
         _engine = new AdaptiveRecommendationEngine();
 
@@ -72,6 +73,7 @@ public class RecommendationTests : IDisposable
             _profileRepo,
             _progressRepo,
             _weaknessRepo,
+            goalRepo,
             _engine,
             optionsWrapper,
             new NullLogger<RecommendationService>()
@@ -702,5 +704,91 @@ public class RecommendationTests : IDisposable
         Assert.Throws<ArgumentNullException>(() =>
             _engine.GenerateAndRank(null!, profile, new List<LearnerWeaknessHistory>(),
                 new List<string>(), null, new List<string>(), EnglishLevel.B1, "evt-null2"));
+    }
+
+    [Fact]
+    public void Engine_Should_Score_ActiveMatchingGoal_5()
+    {
+        // Arrange
+        var profile = _context.LearnerProfiles.Find(TestProfileId)!;
+        profile.SkillMatrices = new List<SkillMatrix>
+        {
+            new() { Skill = SkillType.Grammar, CurrentScore = 40, MasteryLevel = MasteryLevel.Weak }
+        };
+        var lessons = new List<Lesson>
+        {
+            new() { Id = 101, Title = "Grammar Lesson", Skill = SkillType.Grammar, Topic = "Tenses", Level = EnglishLevel.B1, Status = LessonStatus.Published }
+        };
+        
+        var activeGoals = new List<GoalSetting>
+        {
+            new() { SkillTarget = "Grammar", Status = GoalStatus.Active, Deadline = DateTime.UtcNow.AddDays(1) }
+        };
+
+        // Act
+        var ranked = _engine.GenerateAndRank(lessons, profile, new List<LearnerWeaknessHistory>(),
+            new List<string>(), null, new List<string>(), EnglishLevel.B1, "evt-goal-score", activeGoals);
+
+        // Assert - skill=20, level=15, goal=5 -> 40
+        Assert.Single(ranked);
+        Assert.Equal(40.0, ranked[0].PriorityScore);
+        Assert.Contains("Phù hợp với mục tiêu học tập đang hoạt động", ranked[0].Reason);
+    }
+
+    [Fact]
+    public void Engine_Should_Score_CompletedGoal_0()
+    {
+        // Arrange
+        var profile = _context.LearnerProfiles.Find(TestProfileId)!;
+        profile.SkillMatrices = new List<SkillMatrix>
+        {
+            new() { Skill = SkillType.Grammar, CurrentScore = 40, MasteryLevel = MasteryLevel.Weak }
+        };
+        var lessons = new List<Lesson>
+        {
+            new() { Id = 102, Title = "Grammar Lesson", Skill = SkillType.Grammar, Topic = "Tenses", Level = EnglishLevel.B1, Status = LessonStatus.Published }
+        };
+        
+        var completedGoals = new List<GoalSetting>
+        {
+            new() { SkillTarget = "Grammar", Status = GoalStatus.Completed, Deadline = DateTime.UtcNow.AddDays(1) }
+        };
+
+        // Act
+        var ranked = _engine.GenerateAndRank(lessons, profile, new List<LearnerWeaknessHistory>(),
+            new List<string>(), null, new List<string>(), EnglishLevel.B1, "evt-goal-score-comp", completedGoals);
+
+        // Assert - skill=20, level=15, goal=0 -> 35
+        Assert.Single(ranked);
+        Assert.Equal(35.0, ranked[0].PriorityScore);
+        Assert.DoesNotContain("Phù hợp với mục tiêu học tập đang hoạt động", ranked[0].Reason);
+    }
+
+    [Fact]
+    public void Engine_Should_Score_UnrelatedSkillGoal_0()
+    {
+        // Arrange
+        var profile = _context.LearnerProfiles.Find(TestProfileId)!;
+        profile.SkillMatrices = new List<SkillMatrix>
+        {
+            new() { Skill = SkillType.Grammar, CurrentScore = 40, MasteryLevel = MasteryLevel.Weak }
+        };
+        var lessons = new List<Lesson>
+        {
+            new() { Id = 103, Title = "Grammar Lesson", Skill = SkillType.Grammar, Topic = "Tenses", Level = EnglishLevel.B1, Status = LessonStatus.Published }
+        };
+        
+        var activeGoals = new List<GoalSetting>
+        {
+            new() { SkillTarget = "Vocabulary", Status = GoalStatus.Active, Deadline = DateTime.UtcNow.AddDays(1) }
+        };
+
+        // Act
+        var ranked = _engine.GenerateAndRank(lessons, profile, new List<LearnerWeaknessHistory>(),
+            new List<string>(), null, new List<string>(), EnglishLevel.B1, "evt-goal-score-unrel", activeGoals);
+
+        // Assert - skill=20, level=15, goal=0 -> 35
+        Assert.Single(ranked);
+        Assert.Equal(35.0, ranked[0].PriorityScore);
     }
 }

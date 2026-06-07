@@ -45,6 +45,12 @@ public static class DependencyInjection
         services.AddScoped<IAdaptiveRecommendationEngine, AdaptiveRecommendationEngine>();
         services.AddScoped<IRecommendationService, RecommendationService>();
 
+        // Register Goal Tracking and Achievement Engine
+        services.Configure<CoreLearningSystem.Application.Options.AchievementOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.AchievementOptions.Position));
+        services.AddScoped<IGoalTrackingService, GoalTrackingService>();
+        services.AddScoped<IAchievementEngine, AchievementEngine>();
+        services.AddScoped<IAchievementService, AchievementService>();
+
         return services;
     }
 }

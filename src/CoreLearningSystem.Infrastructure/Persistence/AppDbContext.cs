@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<GoalSetting> GoalSettings => Set<GoalSetting>();
     public DbSet<AchievementBadge> AchievementBadges => Set<AchievementBadge>();
     public DbSet<LearnerBadge> LearnerBadges => Set<LearnerBadge>();
+    public DbSet<GoalProgressHistory> GoalProgressHistories => Set<GoalProgressHistory>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<SkillMatrix> SkillMatrices => Set<SkillMatrix>();
@@ -251,6 +252,13 @@ public class AppDbContext : DbContext
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.Property(e => e.SkillTarget).HasMaxLength(50);
+            entity.Property(e => e.TargetLevel).HasMaxLength(20);
+            entity.Property(e => e.Unit).HasMaxLength(50);
+
             entity.HasOne(e => e.LearnerProfile)
                 .WithMany(lp => lp.Goals)
                 .HasForeignKey(e => e.LearnerProfileId)
@@ -265,12 +273,23 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.ImageUrl).HasMaxLength(300);
             entity.Property(e => e.Criteria).HasMaxLength(500);
+
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.AchievementType)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+            entity.Property(e => e.SkillTarget).HasMaxLength(20);
         });
 
         // 15. LearnerBadge Configuration
         modelBuilder.Entity<LearnerBadge>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasIndex(e => new { e.LearnerProfileId, e.BadgeId }).IsUnique();
 
             entity.HasOne(e => e.LearnerProfile)
                 .WithMany(lp => lp.UnlockedBadges)
@@ -281,6 +300,34 @@ public class AppDbContext : DbContext
                 .WithMany(ab => ab.AwardedLearners)
                 .HasForeignKey(e => e.BadgeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GoalProgressHistory Configuration
+        modelBuilder.Entity<GoalProgressHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+
+            entity.Property(e => e.StatusBefore)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.StatusAfter)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.HasOne(e => e.Goal)
+                .WithMany(g => g.ProgressHistories)
+                .HasForeignKey(e => e.GoalId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.GoalProgressHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.GoalId, e.SourceEventId }).IsUnique();
         });
 
         // 16. Feedback Configuration

@@ -231,4 +231,16 @@ public class KafkaPublisher : IKafkaPublisher
         _logger.LogInformation("Message successfully delivered to topic: {Topic}, partition: {Partition}, offset: {Offset}", 
             deliveryResult.Topic, deliveryResult.Partition, deliveryResult.Offset);
     }
+
+    public async Task PublishAsync(string topic, string key, object message)
+    {
+        if (message is ContractEvents.BaseEvent baseEvent)
+        {
+            await SendMessageAsync(topic, key, baseEvent);
+        }
+        else
+        {
+            throw new ArgumentException("Message must inherit from BaseEvent", nameof(message));
+        }
+    }
 }

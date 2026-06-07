@@ -55,8 +55,43 @@ public enum GoalType
     TOEIC,
     IELTS,
     VSTEP,
-    General
+    General,
+    LessonsPerWeek,
+    QuizzesPerWeek,
+    LearningStreak,
+    SkillScore,
+    TargetLevel
 }
+
+public enum GoalStatus
+{
+    Active,
+    Completed,
+    Failed,
+    Cancelled,
+    Expired
+}
+
+public enum AchievementType
+{
+    LessonCount,
+    QuizHighScoreCount,
+    LearningStreak,
+    GoalCompletionCount,
+    SkillImprovement,
+    FirstPlacementTest,
+    FirstQuiz,
+    FirstLesson
+}
+
+public enum GoalAdvisory
+{
+    Keep,
+    AtRisk,
+    DecreaseSuggested,
+    IncreaseSuggested
+}
+
 
 public enum MasteryLevel
 {

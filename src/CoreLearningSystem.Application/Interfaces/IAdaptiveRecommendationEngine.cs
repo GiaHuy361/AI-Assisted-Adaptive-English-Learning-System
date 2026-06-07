@@ -14,6 +14,7 @@ public interface IAdaptiveRecommendationEngine
         SkillType? weakestSkill,
         List<string> currentEventWeakTopics,
         EnglishLevel currentLevel,
-        string sourceEventId
+        string sourceEventId,
+        List<GoalSetting>? activeGoals = null
     );
 }

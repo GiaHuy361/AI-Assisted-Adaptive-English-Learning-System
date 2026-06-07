@@ -329,6 +329,28 @@ public static class DataSeeder
                 await context.SaveChangesAsync();
             }
         }
+
+        // Seed Achievement Badges
+        var badgesToSeed = new List<AchievementBadge>
+        {
+            new() { Code = "FIRST_LESSON", Name = "First Step", Description = "Completed your first lesson!", Criteria = "First Lesson completed", AchievementType = AchievementType.FirstLesson, Threshold = 1, IsActive = true },
+            new() { Code = "FIRST_QUIZ", Name = "Quiz Starter", Description = "Completed your first quiz attempt!", Criteria = "First Quiz completed", AchievementType = AchievementType.FirstQuiz, Threshold = 1, IsActive = true },
+            new() { Code = "LESSONS_10", Name = "Dedicated Learner", Description = "Completed 10 lessons.", Criteria = "10 Lessons completed", AchievementType = AchievementType.LessonCount, Threshold = 10, IsActive = true },
+            new() { Code = "QUIZZES_HIGH_SCORE_5", Name = "High Achiever", Description = "Scored high (>=80%) on 5 quizzes.", Criteria = "5 High Score Quizzes completed", AchievementType = AchievementType.QuizHighScoreCount, Threshold = 5, IsActive = true },
+            new() { Code = "STREAK_3", Name = "3-Day Streak", Description = "Maintained a learning streak of 3 days.", Criteria = "3-Day learning streak", AchievementType = AchievementType.LearningStreak, Threshold = 3, IsActive = true },
+            new() { Code = "STREAK_7", Name = "Week Warrior", Description = "Maintained a learning streak of 7 days.", Criteria = "7-Day learning streak", AchievementType = AchievementType.LearningStreak, Threshold = 7, IsActive = true },
+            new() { Code = "FIRST_GOAL_COMPLETED", Name = "Goal Getter", Description = "Completed 1 goal.", Criteria = "1 Goal completed", AchievementType = AchievementType.GoalCompletionCount, Threshold = 1, IsActive = true },
+            new() { Code = "SKILL_IMPROVED_15", Name = "Skill Builder", Description = "Improved a skill by 15 points.", Criteria = "Skill score improved by 15 points", AchievementType = AchievementType.SkillImprovement, Threshold = 15, IsActive = true }
+        };
+
+        foreach (var badge in badgesToSeed)
+        {
+            if (!await context.AchievementBadges.AnyAsync(b => b.Code == badge.Code))
+            {
+                await context.AchievementBadges.AddAsync(badge);
+            }
+        }
+        await context.SaveChangesAsync();
     }
 }
 

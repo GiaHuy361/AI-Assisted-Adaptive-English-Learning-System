@@ -32,6 +32,8 @@ public class Program
         builder.Services.AddTransient<IEventHandler<LessonCompletedEvent>, LessonCompletedEventHandler>();
         builder.Services.AddTransient<IEventHandler<FeedbackSubmittedEvent>, FeedbackSubmittedEventHandler>();
         builder.Services.AddTransient<IEventHandler<PlacementTestCompletedEvent>, PlacementTestCompletedEventHandler>();
+        builder.Services.AddTransient<IEventHandler<GoalCompletedEvent>, GoalCompletedEventHandler>();
+        builder.Services.AddTransient<IEventHandler<BadgeAwardedEvent>, BadgeAwardedEventHandler>();
 
         // Register gRPC Client and its Wrapper
         builder.Services.AddGrpcClient<AdaptiveLearning.GrpcService.RecommendationService.RecommendationServiceClient>((sp, o) =>

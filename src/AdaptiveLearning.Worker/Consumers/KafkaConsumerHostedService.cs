@@ -64,11 +64,13 @@ public class KafkaConsumerHostedService : BackgroundService
             TopicNames.QuizSubmitted,
             TopicNames.LessonCompleted,
             TopicNames.FeedbackSubmitted,
-            TopicNames.PlacementTestCompleted
+            TopicNames.PlacementTestCompleted,
+            TopicNames.GoalCompleted,
+            TopicNames.BadgeAwarded
         });
 
-        _logger.LogInformation("Subscribed to topics: {QuizSubmitted}, {LessonCompleted}, {FeedbackSubmitted}, {PlacementTestCompleted}",
-            TopicNames.QuizSubmitted, TopicNames.LessonCompleted, TopicNames.FeedbackSubmitted, TopicNames.PlacementTestCompleted);
+        _logger.LogInformation("Subscribed to topics: {QuizSubmitted}, {LessonCompleted}, {FeedbackSubmitted}, {PlacementTestCompleted}, {GoalCompleted}, {BadgeAwarded}",
+            TopicNames.QuizSubmitted, TopicNames.LessonCompleted, TopicNames.FeedbackSubmitted, TopicNames.PlacementTestCompleted, TopicNames.GoalCompleted, TopicNames.BadgeAwarded);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -261,6 +263,20 @@ public class KafkaConsumerHostedService : BackgroundService
                     ?? throw new JsonException("Failed to deserialize PlacementTestCompletedEvent.");
                 var placementHandler = scope.ServiceProvider.GetRequiredService<IEventHandler<PlacementTestCompletedEvent>>();
                 await placementHandler.HandleAsync(placementEvent);
+                break;
+
+            case TopicNames.GoalCompleted:
+                var goalCompletedEvent = JsonSerializer.Deserialize<GoalCompletedEvent>(payload, options)
+                    ?? throw new JsonException("Failed to deserialize GoalCompletedEvent.");
+                var goalCompletedHandler = scope.ServiceProvider.GetRequiredService<IEventHandler<GoalCompletedEvent>>();
+                await goalCompletedHandler.HandleAsync(goalCompletedEvent);
+                break;
+
+            case TopicNames.BadgeAwarded:
+                var badgeAwardedEvent = JsonSerializer.Deserialize<BadgeAwardedEvent>(payload, options)
+                    ?? throw new JsonException("Failed to deserialize BadgeAwardedEvent.");
+                var badgeAwardedHandler = scope.ServiceProvider.GetRequiredService<IEventHandler<BadgeAwardedEvent>>();
+                await badgeAwardedHandler.HandleAsync(badgeAwardedEvent);
                 break;
 
             default:

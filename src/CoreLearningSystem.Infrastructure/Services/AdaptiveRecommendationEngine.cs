@@ -17,7 +17,8 @@ public class AdaptiveRecommendationEngine : IAdaptiveRecommendationEngine
         SkillType? weakestSkill,
         List<string> currentEventWeakTopics,
         EnglishLevel currentLevel,
-        string sourceEventId)
+        string sourceEventId,
+        List<GoalSetting>? activeGoals = null)
     {
         if (candidateLessons == null) throw new ArgumentNullException(nameof(candidateLessons));
         if (profile == null) throw new ArgumentNullException(nameof(profile));
@@ -156,7 +157,40 @@ public class AdaptiveRecommendationEngine : IAdaptiveRecommendationEngine
             }
 
             // Component E: Goal match (Max 5)
-            double goalScoreVal = 0; // Audited to be 0 as GoalSetting doesn't have reliable Skill mapping
+            double goalScoreVal = 0;
+            if (activeGoals != null && activeGoals.Any())
+            {
+                bool hasSkillMatch = false;
+                bool hasLevelMatch = false;
+
+                foreach (var goal in activeGoals)
+                {
+                    if (goal.Status != GoalStatus.Active || goal.Deadline <= DateTime.UtcNow)
+                    {
+                        continue;
+                    }
+
+                    if (!string.IsNullOrEmpty(goal.SkillTarget) && 
+                        string.Equals(goal.SkillTarget, lesson.Skill.ToString(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasSkillMatch = true;
+                    }
+                    if (!string.IsNullOrEmpty(goal.TargetLevel) && 
+                        string.Equals(goal.TargetLevel, lesson.Level.ToString(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasLevelMatch = true;
+                    }
+                }
+
+                if (hasSkillMatch)
+                {
+                    goalScoreVal = 5;
+                }
+                else if (hasLevelMatch)
+                {
+                    goalScoreVal = 3;
+                }
+            }
 
             // Component F: Current-event recency (Max 5)
             double recencyScoreVal = 0;
@@ -185,6 +219,7 @@ public class AdaptiveRecommendationEngine : IAdaptiveRecommendationEngine
             else if (levelScoreVal == 5) reasons.Add("Trình độ cao hơn 1 cấp để thử thách nâng cao");
 
             if (repeatedScoreVal > 0) reasons.Add("Chủ đề thường xuyên gặp lỗi sai");
+            if (goalScoreVal > 0) reasons.Add("Phù hợp với mục tiêu học tập đang hoạt động");
             if (recencyScoreVal > 0) reasons.Add("Lỗi sai vừa gặp phải trong bài làm gần nhất");
 
             string reasonText = reasons.Count > 0 ? string.Join("; ", reasons) : "Được đề xuất để nâng cao năng lực học tập";

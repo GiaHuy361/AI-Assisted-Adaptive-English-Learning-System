@@ -20,6 +20,7 @@ public class RecommendationService : IRecommendationService
     private readonly IRepository<LearnerProfile> _profileRepo;
     private readonly IRepository<LearnerProgress> _progressRepo;
     private readonly IRepository<LearnerWeaknessHistory> _weaknessRepo;
+    private readonly IRepository<GoalSetting> _goalRepo;
     private readonly IAdaptiveRecommendationEngine _engine;
     private readonly RecommendationOptions _options;
     private readonly ILogger<RecommendationService> _logger;
@@ -31,6 +32,7 @@ public class RecommendationService : IRecommendationService
         IRepository<LearnerProfile> profileRepo,
         IRepository<LearnerProgress> progressRepo,
         IRepository<LearnerWeaknessHistory> weaknessRepo,
+        IRepository<GoalSetting> goalRepo,
         IAdaptiveRecommendationEngine engine,
         IOptions<RecommendationOptions> options,
         ILogger<RecommendationService> logger)
@@ -41,6 +43,7 @@ public class RecommendationService : IRecommendationService
         _profileRepo = profileRepo;
         _progressRepo = progressRepo;
         _weaknessRepo = weaknessRepo;
+        _goalRepo = goalRepo;
         _engine = engine;
         _options = options.Value;
         _logger = logger;
@@ -192,6 +195,17 @@ public class RecommendationService : IRecommendationService
                 .Select(w => w.Topic)
                 .ToList();
 
+            // Load active goals if not already provided
+            var activeGoals = request.ActiveGoals;
+            if (activeGoals == null || !activeGoals.Any())
+            {
+                var goals = await _goalRepo.FindAsync(g => 
+                    g.LearnerProfileId == request.LearnerProfileId &&
+                    g.Status == GoalStatus.Active &&
+                    g.Deadline > DateTime.UtcNow);
+                activeGoals = goals.ToList();
+            }
+
             // 9. Call ranking engine
             var rankedRecs = _engine.GenerateAndRank(
                 candidateLessons,
@@ -201,7 +215,8 @@ public class RecommendationService : IRecommendationService
                 request.WeakestSkill,
                 request.WeakTopics,
                 request.Level,
-                request.SourceEventId
+                request.SourceEventId,
+                activeGoals
             );
 
             // Filter by minimum score

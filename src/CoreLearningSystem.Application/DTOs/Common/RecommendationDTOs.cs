@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CoreLearningSystem.Domain.Entities;
 using CoreLearningSystem.Domain.Enums;
 
 namespace CoreLearningSystem.Application.DTOs.Common;
@@ -13,6 +14,7 @@ public class RecommendationRequest
     public List<string> WeakTopics { get; set; } = new();
     public EnglishLevel Level { get; set; }
     public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
+    public List<GoalSetting> ActiveGoals { get; set; } = new();
 }
 
 public class RecommendationResponse

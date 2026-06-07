@@ -16,17 +16,26 @@ public class LessonCompletedEventHandler : IEventHandler<LessonCompletedEvent>
     private readonly ISkillMatrixService _skillMatrixService;
     private readonly IRepository<LearnerProfile> _profileRepo;
     private readonly IRecommendationService _recommendationService;
+    private readonly IGoalTrackingService _goalTrackingService;
+    private readonly IAchievementService _achievementService;
+    private readonly IKafkaPublisher _kafkaPublisher;
     private readonly ILogger<LessonCompletedEventHandler> _logger;
 
     public LessonCompletedEventHandler(
         ISkillMatrixService skillMatrixService,
         IRepository<LearnerProfile> profileRepo,
         IRecommendationService recommendationService,
+        IGoalTrackingService goalTrackingService,
+        IAchievementService achievementService,
+        IKafkaPublisher kafkaPublisher,
         ILogger<LessonCompletedEventHandler> logger)
     {
         _skillMatrixService = skillMatrixService;
         _profileRepo = profileRepo;
         _recommendationService = recommendationService;
+        _goalTrackingService = goalTrackingService;
+        _achievementService = achievementService;
+        _kafkaPublisher = kafkaPublisher;
         _logger = logger;
     }
 
@@ -105,6 +114,49 @@ public class LessonCompletedEventHandler : IEventHandler<LessonCompletedEvent>
 
             _logger.LogInformation("LessonCompletedEventHandler updated recommendation status. EventId: {EventId}, UserId: {UserId}, LessonId: {LessonId}",
                 ev.EventId, ev.UserId, ev.LessonId);
+
+            // 1. Update Lesson Goal
+            var lessonGoalRequest = new GoalProgressRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                SourceEventId = $"{ev.EventId}_lesson",
+                TriggerGoalType = GoalType.LessonsPerWeek,
+                IncrementValue = 1.0,
+                OccurredAt = ev.CompletedAt.UtcDateTime
+            };
+            var lessonGoalResult = await _goalTrackingService.UpdateGoalProgressAsync(lessonGoalRequest, default);
+
+            // Publish completed goals
+            if (lessonGoalResult.CompletedGoals != null)
+            {
+                foreach (var completedGoal in lessonGoalResult.CompletedGoals)
+                {
+                    var goalCompletedEvent = new GoalCompletedEvent
+                    {
+                        UserId = ev.UserId,
+                        LearnerProfileId = profile.Id,
+                        GoalId = completedGoal.GoalId,
+                        GoalType = completedGoal.GoalType,
+                        Title = completedGoal.Title,
+                        TargetValue = completedGoal.TargetValue,
+                        AchievedValue = completedGoal.AchievedValue,
+                        CompletedAt = completedGoal.CompletedAt
+                    };
+                    await _kafkaPublisher.PublishAsync(AdaptiveLearning.Contracts.Topics.TopicNames.GoalCompleted, completedGoal.GoalId.ToString(), goalCompletedEvent);
+                }
+            }
+
+            // 2. Evaluate and Award Achievements
+            var achievementRequest = new AchievementEvaluationRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                SourceEventId = ev.EventId.ToString(),
+                Trigger = AchievementTrigger.LessonCompleted,
+                OccurredAt = ev.CompletedAt.UtcDateTime
+            };
+            await _achievementService.EvaluateAndAwardAsync(achievementRequest, default);
         }
         catch (Exception ex)
         {

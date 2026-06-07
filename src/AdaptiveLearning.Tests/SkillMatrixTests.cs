@@ -505,6 +505,9 @@ public class SkillMatrixTests : IDisposable
             _service,
             new Repository<LearnerProfile>(_context),
             new NoopRecommendationService(),
+            new NoopGoalTrackingService(),
+            new NoopAchievementService(),
+            new NoopKafkaPublisher(),
             new NullLogger<LessonCompletedEventHandler>()
         );
 
@@ -522,5 +525,31 @@ public class SkillMatrixTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => lessonHandler.HandleAsync(lessonEvent));
+    }
+
+    private class NoopGoalTrackingService : IGoalTrackingService
+    {
+        public Task<GoalProgressResult> UpdateGoalProgressAsync(GoalProgressRequest request, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new GoalProgressResult());
+        }
+    }
+
+    private class NoopAchievementService : IAchievementService
+    {
+        public Task<AchievementAwardResult> EvaluateAndAwardAsync(AchievementEvaluationRequest request, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new AchievementAwardResult());
+        }
+    }
+
+    private class NoopKafkaPublisher : IKafkaPublisher
+    {
+        public Task PublishQuizSubmittedAsync(CoreLearningSystem.Application.DTOs.Events.QuizSubmittedEvent ev) => Task.CompletedTask;
+        public Task PublishPlacementTestCompletedAsync(CoreLearningSystem.Application.DTOs.Events.PlacementTestCompletedEvent ev) => Task.CompletedTask;
+        public Task PublishGoalCompletedAsync(CoreLearningSystem.Application.DTOs.Events.GoalCompletedEvent ev) => Task.CompletedTask;
+        public Task PublishLessonCompletedAsync(CoreLearningSystem.Application.DTOs.Events.LessonCompletedEvent ev) => Task.CompletedTask;
+        public Task PublishFeedbackSubmittedAsync(CoreLearningSystem.Application.DTOs.Events.FeedbackSubmittedEvent ev) => Task.CompletedTask;
+        public Task PublishAsync(string topic, string key, object message) => Task.CompletedTask;
     }
 }
