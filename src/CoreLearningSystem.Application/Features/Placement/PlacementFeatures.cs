@@ -183,7 +183,7 @@ public class SubmitPlacementTestCommandHandler : IRequestHandler<SubmitPlacement
             if (userAnswer != null)
             {
                 var correctOption = options.FirstOrDefault(o => o.IsCorrect);
-                AnswerOption selectedOption = null;
+                AnswerOption? selectedOption = null;
 
                 if (userAnswer.SelectedOptionIndex >= 0 && userAnswer.SelectedOptionIndex < options.Count)
                 {

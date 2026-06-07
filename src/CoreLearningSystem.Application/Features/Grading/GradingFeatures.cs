@@ -140,8 +140,8 @@ public class SubmitQuizAttemptCommandHandler : IRequestHandler<SubmitQuizAttempt
                 answerDto.SelectedAnswerOptionId = answerDto.AnswerOptionId;
             }
 
-            AnswerOption selectedOption = null;
-            AnswerOption correctOption = null;
+            AnswerOption? selectedOption = null;
+            AnswerOption? correctOption = null;
 
             if (optionsByQuestion.TryGetValue(answerDto.QuestionId, out var optionsList))
             {

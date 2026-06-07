@@ -6,6 +6,8 @@ using CoreLearningSystem.Application.Interfaces;
 using CoreLearningSystem.Infrastructure.Persistence;
 using CoreLearningSystem.Infrastructure.Persistence.Repositories;
 using CoreLearningSystem.Infrastructure.Services;
+using Hangfire;
+using Hangfire.MySql;
 
 namespace CoreLearningSystem.Infrastructure;
 
@@ -50,6 +52,51 @@ public static class DependencyInjection
         services.AddScoped<IGoalTrackingService, GoalTrackingService>();
         services.AddScoped<IAchievementEngine, AchievementEngine>();
         services.AddScoped<IAchievementService, AchievementService>();
+
+        // Phase 7 options
+        services.Configure<CoreLearningSystem.Application.Options.EmailOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.EmailOptions.Position));
+        services.Configure<CoreLearningSystem.Application.Options.JobScheduleOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.JobScheduleOptions.Position));
+        services.Configure<CoreLearningSystem.Application.Options.CleanupOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.CleanupOptions.Position));
+
+        // Services
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IEmailSender, EmailSender>();
+        services.AddScoped<BackgroundJobExecutor>();
+
+        // Background Jobs
+        services.AddScoped<LearningReminderJob>();
+        services.AddScoped<WeeklyLearningReportJob>();
+        services.AddScoped<GoalStatusTrackingJob>();
+        services.AddScoped<AchievementCheckingJob>();
+        services.AddScoped<SkillDecayJob>();
+        services.AddScoped<CleanupJob>();
+
+        // Hangfire client/storage configuration with Allow User Variables=True
+        var hangfireConnStr = connectionString;
+        if (hangfireConnStr != null)
+        {
+            if (!hangfireConnStr.Contains("Allow User Variables=True", StringComparison.OrdinalIgnoreCase) &&
+                !hangfireConnStr.Contains("AllowUserVariables=True", StringComparison.OrdinalIgnoreCase))
+            {
+                hangfireConnStr = hangfireConnStr.TrimEnd(';') + ";Allow User Variables=True;";
+            }
+        }
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseFilter(new AutomaticRetryAttribute { Attempts = 3 })
+            .UseStorage(new MySqlStorage(
+                hangfireConnStr,
+                new MySqlStorageOptions
+                {
+                    TransactionIsolationLevel = System.Transactions.IsolationLevel.ReadCommitted,
+                    QueuePollInterval = TimeSpan.FromSeconds(15),
+                    PrepareSchemaIfNecessary = true,
+                    TablesPrefix = "Hangfire"
+                }
+            )));
 
         return services;
     }

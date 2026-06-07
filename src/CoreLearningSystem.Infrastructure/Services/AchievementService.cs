@@ -210,7 +210,7 @@ public class AchievementService : IAchievementService
     {
         var progressDates = await _context.LearnerProgresses
             .Where(lp => lp.LearnerProfileId == profileId && lp.IsCompleted && lp.CompletedAt.HasValue)
-            .Select(lp => lp.CompletedAt.Value)
+            .Select(lp => lp.CompletedAt ?? DateTime.MinValue)
             .ToListAsync(cancellationToken);
 
         var quizDates = await _context.QuizAttempts

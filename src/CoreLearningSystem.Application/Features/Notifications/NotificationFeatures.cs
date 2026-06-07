@@ -35,7 +35,7 @@ public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuer
 }
 
 // MARK AS READ
-public record MarkNotificationAsReadCommand(int NotificationId) : IRequest<ApiResponse<bool>>;
+public record MarkNotificationAsReadCommand(int NotificationId, int UserId) : IRequest<ApiResponse<bool>>;
 
 public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotificationAsReadCommand, ApiResponse<bool>>
 {
@@ -49,9 +49,13 @@ public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotifica
     public async Task<ApiResponse<bool>> Handle(MarkNotificationAsReadCommand request, CancellationToken cancellationToken)
     {
         var notification = await _notificationRepository.GetByIdAsync(request.NotificationId);
-        if (notification == null) return ApiResponse<bool>.FailureResponse("Notification not found.");
+        if (notification == null || notification.UserId != request.UserId) 
+            return ApiResponse<bool>.FailureResponse("Notification not found.");
 
         notification.IsRead = true;
+        notification.ReadAt = DateTime.UtcNow;
+        notification.UpdatedAt = DateTime.UtcNow;
+
         await _notificationRepository.UpdateAsync(notification);
         await _notificationRepository.SaveChangesAsync();
 
@@ -77,6 +81,8 @@ public class MarkAllNotificationsAsReadCommandHandler : IRequestHandler<MarkAllN
         foreach (var n in notifications)
         {
             n.IsRead = true;
+            n.ReadAt = DateTime.UtcNow;
+            n.UpdatedAt = DateTime.UtcNow;
             await _notificationRepository.UpdateAsync(n);
         }
         await _notificationRepository.SaveChangesAsync();

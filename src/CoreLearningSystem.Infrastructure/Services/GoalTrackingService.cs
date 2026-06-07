@@ -247,6 +247,11 @@ public class GoalTrackingService : IGoalTrackingService
         }
     }
 
+    public GoalAdvisoryDto GetGoalAdvisory(GoalSetting goal, DateTime now)
+    {
+        return ComputeAdvisory(goal, now);
+    }
+
     private static GoalAdvisoryDto ComputeAdvisory(GoalSetting goal, DateTime now)
     {
         var totalSeconds = (goal.Deadline - goal.StartDate).TotalSeconds;

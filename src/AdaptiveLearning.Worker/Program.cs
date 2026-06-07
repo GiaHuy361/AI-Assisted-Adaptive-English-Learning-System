@@ -8,6 +8,9 @@ using AdaptiveLearning.Worker.Handlers;
 using AdaptiveLearning.Worker.Consumers;
 using AdaptiveLearning.Contracts.Events;
 using CoreLearningSystem.Infrastructure;
+using Hangfire;
+using CoreLearningSystem.Application.Options;
+using CoreLearningSystem.Infrastructure.Services;
 
 namespace AdaptiveLearning.Worker;
 
@@ -34,6 +37,10 @@ public class Program
         builder.Services.AddTransient<IEventHandler<PlacementTestCompletedEvent>, PlacementTestCompletedEventHandler>();
         builder.Services.AddTransient<IEventHandler<GoalCompletedEvent>, GoalCompletedEventHandler>();
         builder.Services.AddTransient<IEventHandler<BadgeAwardedEvent>, BadgeAwardedEventHandler>();
+        builder.Services.AddTransient<IEventHandler<NotificationCreatedEvent>, NotificationCreatedEventHandler>();
+
+        // Register Hangfire Server
+        builder.Services.AddHangfireServer();
 
         // Register gRPC Client and its Wrapper
         builder.Services.AddGrpcClient<AdaptiveLearning.GrpcService.RecommendationService.RecommendationServiceClient>((sp, o) =>
@@ -61,6 +68,15 @@ public class Program
         builder.Services.AddHostedService<KafkaConsumerHostedService>();
 
         var host = builder.Build();
+
+        // Register Hangfire Recurring Jobs on startup
+        using (var scope = host.Services.CreateScope())
+        {
+            var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<JobScheduleOptions>>().Value;
+            var jobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+            RecurringJobScheduler.ScheduleJobs(jobManager, options);
+        }
+
         host.Run();
     }
 }

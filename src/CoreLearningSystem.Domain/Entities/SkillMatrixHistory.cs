@@ -16,6 +16,7 @@ public class SkillMatrixHistory
     public int SourceId { get; set; }
     public Guid EventId { get; set; }
     public string Reason { get; set; } = string.Empty;
+    public string? DecayPeriodKey { get; set; }
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation Properties

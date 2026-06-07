@@ -22,6 +22,7 @@ public class RecommendationService : IRecommendationService
     private readonly IRepository<LearnerWeaknessHistory> _weaknessRepo;
     private readonly IRepository<GoalSetting> _goalRepo;
     private readonly IAdaptiveRecommendationEngine _engine;
+    private readonly INotificationService _notificationService;
     private readonly RecommendationOptions _options;
     private readonly ILogger<RecommendationService> _logger;
 
@@ -34,6 +35,7 @@ public class RecommendationService : IRecommendationService
         IRepository<LearnerWeaknessHistory> weaknessRepo,
         IRepository<GoalSetting> goalRepo,
         IAdaptiveRecommendationEngine engine,
+        INotificationService notificationService,
         IOptions<RecommendationOptions> options,
         ILogger<RecommendationService> logger)
     {
@@ -45,6 +47,7 @@ public class RecommendationService : IRecommendationService
         _weaknessRepo = weaknessRepo;
         _goalRepo = goalRepo;
         _engine = engine;
+        _notificationService = notificationService;
         _options = options.Value;
         _logger = logger;
 
@@ -315,6 +318,39 @@ public class RecommendationService : IRecommendationService
 
             await _recommendationRepo.SaveChangesAsync();
             await _recommendationRepo.CommitTransactionAsync();
+
+            // 4. Create Notification (Decoupled in separate transaction block)
+            try
+            {
+                if (finalRecommendations.Any())
+                {
+                    var firstLessonTitle = finalRecommendations[0].Lesson?.Title ?? $"Lesson #{finalRecommendations[0].LessonId}";
+                    var lessonsCount = finalRecommendations.Count;
+                    var message = lessonsCount > 1 
+                        ? $"Hệ thống có {lessonsCount} bài học gợi ý mới cho bạn, bắt đầu với bài \"{firstLessonTitle}\"."
+                        : $"Hệ thống có bài học gợi ý mới cho bạn: \"{firstLessonTitle}\".";
+
+                    var notifReq = new CreateNotificationRequest
+                    {
+                        UserId = request.UserId,
+                        LearnerProfileId = profile.Id,
+                        Type = NotificationType.NewRecommendation,
+                        Channel = NotificationChannel.InApp,
+                        Title = "Gợi ý học tập mới",
+                        Message = message,
+                        IdempotencyKey = $"recommendation:{request.SourceEventId}",
+                        SourceType = "Recommendation",
+                        SourceId = request.SourceEventId,
+                        SourceEventId = request.SourceEventId
+                    };
+
+                    await _notificationService.CreateNotificationAsync(notifReq, default);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create recommendation notification after transaction commit. EventId: {EventId}", request.SourceEventId);
+            }
 
             _logger.LogInformation("GenerateRecommendationsAsync completed successfully. EventId: {EventId}, Generated count: {Count}",
                 request.SourceEventId, finalRecommendations.Count);

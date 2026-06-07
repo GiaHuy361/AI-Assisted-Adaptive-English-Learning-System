@@ -105,7 +105,8 @@ public enum MatrixSourceType
     PlacementTest,
     Quiz,
     LessonCompletion,
-    ManualAdjustment
+    ManualAdjustment,
+    SkillDecay
 }
 
 public enum WeaknessStatus
@@ -135,5 +136,42 @@ public enum RecommendationAction
     Expired,
     Replaced,
     Regenerated
+}
+
+public enum NotificationType
+{
+    LearningReminder,
+    WeeklyReport,
+    NewRecommendation,
+    GoalCompleted,
+    BadgeAwarded,
+    GoalAtRisk,
+    SkillDecayWarning,
+    System
+}
+
+public enum NotificationChannel
+{
+    InApp,
+    Email,
+    InAppAndEmail
+}
+
+public enum NotificationStatus
+{
+    Pending,
+    Processing,
+    Sent,
+    Failed,
+    Cancelled
+}
+
+public enum JobStatus
+{
+    Running,
+    Succeeded,
+    PartiallySucceeded,
+    Failed,
+    Cancelled
 }
 

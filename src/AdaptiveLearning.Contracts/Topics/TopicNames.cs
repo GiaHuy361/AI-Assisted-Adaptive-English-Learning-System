@@ -9,4 +9,5 @@ public static class TopicNames
     public const string DeadLetterTopic = "dead-letter-topic";
     public const string GoalCompleted = "goal-completed";
     public const string BadgeAwarded = "badge-awarded";
+    public const string NotificationCreated = "notification-created";
 }

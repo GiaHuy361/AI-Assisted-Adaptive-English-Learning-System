@@ -75,6 +75,7 @@ public class RecommendationTests : IDisposable
             _weaknessRepo,
             goalRepo,
             _engine,
+            new NoopNotificationService(),
             optionsWrapper,
             new NullLogger<RecommendationService>()
         );
@@ -790,5 +791,19 @@ public class RecommendationTests : IDisposable
         // Assert - skill=20, level=15, goal=0 -> 35
         Assert.Single(ranked);
         Assert.Equal(35.0, ranked[0].PriorityScore);
+    }
+
+    private class NoopNotificationService : INotificationService
+    {
+        public Task<NotificationDetailsDto?> CreateNotificationAsync(CreateNotificationRequest request, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<NotificationDetailsDto?>(null);
+        }
+        public Task<bool> MarkAsReadAsync(int notificationId, int userId, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public Task<bool> MarkAllAsReadAsync(int userId, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public Task<int> GetUnreadCountAsync(int userId, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(0);
+        public Task<IEnumerable<NotificationDetailsDto>> GetUserNotificationsAsync(int userId, int page = 1, int pageSize = 10, System.Threading.CancellationToken cancellationToken = default) =>
+            Task.FromResult(Enumerable.Empty<NotificationDetailsDto>());
+        public Task<bool> RecordDeliveryAttemptAsync(int notificationId, NotificationChannel channel, NotificationStatus status, string? errorMessage, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(true);
     }
 }

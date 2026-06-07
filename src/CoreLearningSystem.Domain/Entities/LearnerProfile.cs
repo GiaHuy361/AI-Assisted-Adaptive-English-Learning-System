@@ -29,4 +29,5 @@ public class LearnerProfile
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
     public ICollection<RecommendationHistory> RecommendationHistories { get; set; } = new List<RecommendationHistory>();
     public ICollection<GoalProgressHistory> GoalProgressHistories { get; set; } = new List<GoalProgressHistory>();
+    public ICollection<WeeklyLearningReport> WeeklyLearningReports { get; set; } = new List<WeeklyLearningReport>();
 }

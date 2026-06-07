@@ -229,7 +229,7 @@ public class AdaptiveRecommendationEngine : IAdaptiveRecommendationEngine
                 LearnerProfileId = profile.Id,
                 LessonId = lesson.Id,
                 Skill = lesson.Skill,
-                Topic = lesson.Topic,
+                Topic = lesson.Topic ?? string.Empty,
                 Level = lesson.Level,
                 PriorityScore = totalScore,
                 Reason = reasonText,

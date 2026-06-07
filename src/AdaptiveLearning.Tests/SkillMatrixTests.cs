@@ -533,6 +533,11 @@ public class SkillMatrixTests : IDisposable
         {
             return Task.FromResult(new GoalProgressResult());
         }
+
+        public GoalAdvisoryDto GetGoalAdvisory(GoalSetting goal, DateTime now)
+        {
+            return new GoalAdvisoryDto();
+        }
     }
 
     private class NoopAchievementService : IAchievementService

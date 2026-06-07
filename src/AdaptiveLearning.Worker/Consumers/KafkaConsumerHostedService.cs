@@ -66,11 +66,12 @@ public class KafkaConsumerHostedService : BackgroundService
             TopicNames.FeedbackSubmitted,
             TopicNames.PlacementTestCompleted,
             TopicNames.GoalCompleted,
-            TopicNames.BadgeAwarded
+            TopicNames.BadgeAwarded,
+            TopicNames.NotificationCreated
         });
 
-        _logger.LogInformation("Subscribed to topics: {QuizSubmitted}, {LessonCompleted}, {FeedbackSubmitted}, {PlacementTestCompleted}, {GoalCompleted}, {BadgeAwarded}",
-            TopicNames.QuizSubmitted, TopicNames.LessonCompleted, TopicNames.FeedbackSubmitted, TopicNames.PlacementTestCompleted, TopicNames.GoalCompleted, TopicNames.BadgeAwarded);
+        _logger.LogInformation("Subscribed to topics: {QuizSubmitted}, {LessonCompleted}, {FeedbackSubmitted}, {PlacementTestCompleted}, {GoalCompleted}, {BadgeAwarded}, {NotificationCreated}",
+            TopicNames.QuizSubmitted, TopicNames.LessonCompleted, TopicNames.FeedbackSubmitted, TopicNames.PlacementTestCompleted, TopicNames.GoalCompleted, TopicNames.BadgeAwarded, TopicNames.NotificationCreated);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -277,6 +278,13 @@ public class KafkaConsumerHostedService : BackgroundService
                     ?? throw new JsonException("Failed to deserialize BadgeAwardedEvent.");
                 var badgeAwardedHandler = scope.ServiceProvider.GetRequiredService<IEventHandler<BadgeAwardedEvent>>();
                 await badgeAwardedHandler.HandleAsync(badgeAwardedEvent);
+                break;
+
+            case TopicNames.NotificationCreated:
+                var notificationCreatedEvent = JsonSerializer.Deserialize<NotificationCreatedEvent>(payload, options)
+                    ?? throw new JsonException("Failed to deserialize NotificationCreatedEvent.");
+                var notificationCreatedHandler = scope.ServiceProvider.GetRequiredService<IEventHandler<NotificationCreatedEvent>>();
+                await notificationCreatedHandler.HandleAsync(notificationCreatedEvent);
                 break;
 
             default:
