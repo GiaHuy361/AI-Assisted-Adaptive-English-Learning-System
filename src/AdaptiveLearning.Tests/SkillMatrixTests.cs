@@ -12,10 +12,20 @@ using CoreLearningSystem.Infrastructure.Persistence;
 using CoreLearningSystem.Infrastructure.Persistence.Repositories;
 using CoreLearningSystem.Infrastructure.Services;
 using CoreLearningSystem.Application.DTOs.Common;
+using CoreLearningSystem.Application.Interfaces;
 using AdaptiveLearning.Worker.Handlers;
 using AdaptiveLearning.Contracts.Events;
 
 namespace AdaptiveLearning.Tests;
+
+// No-op stub used in tests where recommendation service is not under test
+internal sealed class NoopRecommendationService : IRecommendationService
+{
+    public Task<RecommendationResponse> GenerateRecommendationsAsync(RecommendationRequest request)
+        => Task.FromResult(new RecommendationResponse { UserId = request.UserId, OverallReason = "noop" });
+    public Task HandleLessonCompletedAsync(int learnerProfileId, int lessonId, string sourceEventId)
+        => Task.CompletedTask;
+}
 
 public class SkillMatrixTests : IDisposable
 {
@@ -465,7 +475,8 @@ public class SkillMatrixTests : IDisposable
         var placementHandler = new PlacementTestCompletedEventHandler(
             _service,
             new Repository<LearnerProfile>(_context),
-            new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlacementTestCompletedEventHandler>()
+            new NoopRecommendationService(),
+            new NullLogger<PlacementTestCompletedEventHandler>()
         );
 
         var placementEvent = new PlacementTestCompletedEvent
@@ -493,7 +504,8 @@ public class SkillMatrixTests : IDisposable
         var lessonHandler = new LessonCompletedEventHandler(
             _service,
             new Repository<LearnerProfile>(_context),
-            new Microsoft.Extensions.Logging.Abstractions.NullLogger<LessonCompletedEventHandler>()
+            new NoopRecommendationService(),
+            new NullLogger<LessonCompletedEventHandler>()
         );
 
         var lessonEvent = new LessonCompletedEvent

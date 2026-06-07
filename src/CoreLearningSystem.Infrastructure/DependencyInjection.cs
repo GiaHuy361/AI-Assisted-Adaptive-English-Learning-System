@@ -40,6 +40,11 @@ public static class DependencyInjection
         services.AddScoped<ISkillMatrixService, SkillMatrixService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
+        // Register Recommendation Engine and Service
+        services.Configure<CoreLearningSystem.Application.Options.RecommendationOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.RecommendationOptions.Position));
+        services.AddScoped<IAdaptiveRecommendationEngine, AdaptiveRecommendationEngine>();
+        services.AddScoped<IRecommendationService, RecommendationService>();
+
         return services;
     }
 }

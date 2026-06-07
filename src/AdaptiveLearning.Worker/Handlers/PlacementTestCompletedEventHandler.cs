@@ -15,15 +15,18 @@ public class PlacementTestCompletedEventHandler : IEventHandler<PlacementTestCom
 {
     private readonly ISkillMatrixService _skillMatrixService;
     private readonly IRepository<LearnerProfile> _profileRepo;
+    private readonly IRecommendationService _recommendationService;
     private readonly ILogger<PlacementTestCompletedEventHandler> _logger;
 
     public PlacementTestCompletedEventHandler(
         ISkillMatrixService skillMatrixService,
         IRepository<LearnerProfile> profileRepo,
+        IRecommendationService recommendationService,
         ILogger<PlacementTestCompletedEventHandler> logger)
     {
         _skillMatrixService = skillMatrixService;
         _profileRepo = profileRepo;
+        _recommendationService = recommendationService;
         _logger = logger;
     }
 
@@ -112,6 +115,37 @@ public class PlacementTestCompletedEventHandler : IEventHandler<PlacementTestCom
 
             _logger.LogInformation("PlacementTestCompletedEventHandler successfully initialized Skill Matrix. EventId: {EventId}, UserId: {UserId}, WeakestSkill: {WeakestSkill}",
                 ev.EventId, ev.UserId, persistenceResult.WeakestSkill);
+
+            // Generate initial recommendations based on placement test level
+            SkillType? weakestSkillEnum = null;
+            if (Enum.TryParse<SkillType>(persistenceResult.WeakestSkill, true, out var parsedSkill))
+            {
+                weakestSkillEnum = parsedSkill;
+            }
+
+            Enum.TryParse<EnglishLevel>(ev.AssignedLevel, true, out var profileLevel);
+
+            var recRequest = new RecommendationRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                SourceEventId = ev.EventId.ToString(),
+                WeakestSkill = weakestSkillEnum,
+                WeakTopics = new List<string>(),
+                Level = profileLevel == EnglishLevel.None ? EnglishLevel.A1 : profileLevel,
+                OccurredAt = ev.CompletedAt.UtcDateTime
+            };
+
+            var recResult = await _recommendationService.GenerateRecommendationsAsync(recRequest);
+
+            _logger.LogInformation("PlacementTestCompletedEventHandler generated initial recommendations. EventId: {EventId}, UserId: {UserId}, Count: {Count}",
+                ev.EventId, ev.UserId, recResult.RecommendedLessons.Count);
+
+            foreach (var recLesson in recResult.RecommendedLessons)
+            {
+                _logger.LogInformation("Initial Recommendation: LessonId: {LessonId}, Title: {Title}, Score: {Score}",
+                    recLesson.LessonId, recLesson.Title, recLesson.PriorityScore);
+            }
         }
         catch (Exception ex)
         {

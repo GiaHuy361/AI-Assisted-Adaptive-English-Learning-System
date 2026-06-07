@@ -18,17 +18,20 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
     private readonly IRecommendationGrpcClient _grpcClient;
     private readonly ISkillMatrixService _skillMatrixService;
     private readonly IRepository<LearnerProfile> _profileRepo;
+    private readonly IRecommendationService _recommendationService;
     private readonly ILogger<QuizSubmittedEventHandler> _logger;
 
     public QuizSubmittedEventHandler(
         IRecommendationGrpcClient grpcClient,
         ISkillMatrixService skillMatrixService,
         IRepository<LearnerProfile> profileRepo,
+        IRecommendationService recommendationService,
         ILogger<QuizSubmittedEventHandler> logger)
     {
         _grpcClient = grpcClient;
         _skillMatrixService = skillMatrixService;
         _profileRepo = profileRepo;
+        _recommendationService = recommendationService;
         _logger = logger;
     }
 
@@ -156,6 +159,38 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
 
             _logger.LogInformation("QuizSubmittedEventHandler successfully persisted Skill Matrix. EventId: {EventId}, UserId: {UserId}, WeakestSkill: {WeakestSkill}, RepeatedWeakTopics: {Repeated}",
                 ev.EventId, ev.UserId, persistenceResult.WeakestSkill, string.Join(", ", persistenceResult.RepeatedWeakTopics));
+
+            // Generate recommendations after Skill Matrix update completes successfully
+            SkillType? weakestSkillEnum = null;
+            if (Enum.TryParse<SkillType>(persistenceResult.WeakestSkill, true, out var parsedSkill))
+            {
+                weakestSkillEnum = parsedSkill;
+            }
+
+            // Fetch the updated profile to make sure we have the latest level and loaded matrices
+            var updatedProfile = (await _profileRepo.FindAsync(p => p.Id == profile.Id)).FirstOrDefault() ?? profile;
+
+            var recRequest = new RecommendationRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                SourceEventId = ev.EventId.ToString(),
+                WeakestSkill = weakestSkillEnum,
+                WeakTopics = weakTopics.Select(w => w.Topic).ToList(),
+                Level = updatedProfile.Level,
+                OccurredAt = ev.SubmittedAt.UtcDateTime
+            };
+
+            var recResult = await _recommendationService.GenerateRecommendationsAsync(recRequest);
+
+            _logger.LogInformation("QuizSubmittedEventHandler successfully generated recommendations. EventId: {EventId}, UserId: {UserId}, Recommended count: {Count}",
+                ev.EventId, ev.UserId, recResult.RecommendedLessons.Count);
+
+            foreach (var recLesson in recResult.RecommendedLessons)
+            {
+                _logger.LogInformation("Recommended Lesson: LessonId: {LessonId}, Title: {Title}, Score: {Score}, Reason: {Reason}",
+                    recLesson.LessonId, recLesson.Title, recLesson.PriorityScore, recLesson.Reason);
+            }
         }
         catch (Exception ex)
         {

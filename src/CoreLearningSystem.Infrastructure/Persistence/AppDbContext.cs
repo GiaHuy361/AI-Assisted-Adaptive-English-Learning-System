@@ -30,6 +30,8 @@ public class AppDbContext : DbContext
     public DbSet<SkillMatrix> SkillMatrices => Set<SkillMatrix>();
     public DbSet<SkillMatrixHistory> SkillMatrixHistories => Set<SkillMatrixHistory>();
     public DbSet<LearnerWeaknessHistory> LearnerWeaknessHistories => Set<LearnerWeaknessHistory>();
+    public DbSet<Recommendation> Recommendations => Set<Recommendation>();
+    public DbSet<RecommendationHistory> RecommendationHistories => Set<RecommendationHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -373,6 +375,85 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Level).HasMaxLength(20);
 
             entity.HasIndex(e => new { e.LearnerProfileId, e.Skill, e.Topic }).IsUnique();
+        });
+
+        // 21. Recommendation Configuration
+        modelBuilder.Entity<Recommendation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.Recommendations)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Level)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Topic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.Status });
+            entity.HasIndex(e => new { e.LearnerProfileId, e.LessonId });
+            entity.HasIndex(e => e.SourceEventId);
+            entity.HasIndex(e => e.LessonId);
+        });
+
+        // 22. RecommendationHistory Configuration
+        modelBuilder.Entity<RecommendationHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Recommendation)
+                .WithMany()
+                .HasForeignKey(e => e.RecommendationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.RecommendationHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Action)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.PreviousStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.NewStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+
+            entity.HasIndex(e => e.SourceEventId);
+            entity.HasIndex(e => e.LearnerProfileId);
+            entity.HasIndex(e => e.LessonId);
+            entity.HasIndex(e => e.RecommendationId);
+            entity.HasIndex(e => e.RecordedAt);
         });
     }
 }

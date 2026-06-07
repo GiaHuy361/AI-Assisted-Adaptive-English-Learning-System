@@ -80,3 +80,25 @@ public enum WeaknessStatus
     Resolved
 }
 
+public enum RecommendationStatus
+{
+    Active,
+    Accepted,
+    Completed,
+    Dismissed,
+    Expired,
+    Replaced
+}
+
+public enum RecommendationAction
+{
+    Generated,
+    Accepted,
+    Opened,
+    Completed,
+    Dismissed,
+    Expired,
+    Replaced,
+    Regenerated
+}
+

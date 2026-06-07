@@ -15,15 +15,18 @@ public class LessonCompletedEventHandler : IEventHandler<LessonCompletedEvent>
 {
     private readonly ISkillMatrixService _skillMatrixService;
     private readonly IRepository<LearnerProfile> _profileRepo;
+    private readonly IRecommendationService _recommendationService;
     private readonly ILogger<LessonCompletedEventHandler> _logger;
 
     public LessonCompletedEventHandler(
         ISkillMatrixService skillMatrixService,
         IRepository<LearnerProfile> profileRepo,
+        IRecommendationService recommendationService,
         ILogger<LessonCompletedEventHandler> logger)
     {
         _skillMatrixService = skillMatrixService;
         _profileRepo = profileRepo;
+        _recommendationService = recommendationService;
         _logger = logger;
     }
 
@@ -92,6 +95,16 @@ public class LessonCompletedEventHandler : IEventHandler<LessonCompletedEvent>
 
             _logger.LogInformation("LessonCompletedEventHandler successfully processed lesson completion. EventId: {EventId}, UserId: {UserId}, WeakestSkill: {WeakestSkill}",
                 ev.EventId, ev.UserId, persistenceResult.WeakestSkill);
+
+            // Update recommendation status for this lesson to Completed
+            await _recommendationService.HandleLessonCompletedAsync(
+                profile.Id,
+                ev.LessonId,
+                ev.EventId.ToString()
+            );
+
+            _logger.LogInformation("LessonCompletedEventHandler updated recommendation status. EventId: {EventId}, UserId: {UserId}, LessonId: {LessonId}",
+                ev.EventId, ev.UserId, ev.LessonId);
         }
         catch (Exception ex)
         {
