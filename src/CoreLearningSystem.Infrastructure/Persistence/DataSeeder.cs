@@ -13,8 +13,8 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(AppDbContext context)
     {
-        // 1. Ensure database schema exists
-        await context.Database.EnsureCreatedAsync();
+        // 1. Ensure database schema exists via EF Core Migrations
+        await context.Database.MigrateAsync();
 
 
         // 3. Seed Users

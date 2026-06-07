@@ -57,3 +57,26 @@ public enum GoalType
     VSTEP,
     General
 }
+
+public enum MasteryLevel
+{
+    Weak,
+    Average,
+    Good
+}
+
+public enum MatrixSourceType
+{
+    PlacementTest,
+    Quiz,
+    LessonCompletion,
+    ManualAdjustment
+}
+
+public enum WeaknessStatus
+{
+    Active,
+    Improving,
+    Resolved
+}
+

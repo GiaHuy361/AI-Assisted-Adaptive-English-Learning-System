@@ -7,6 +7,7 @@ using AdaptiveLearning.Worker.Services;
 using AdaptiveLearning.Worker.Handlers;
 using AdaptiveLearning.Worker.Consumers;
 using AdaptiveLearning.Contracts.Events;
+using CoreLearningSystem.Infrastructure;
 
 namespace AdaptiveLearning.Worker;
 
@@ -21,6 +22,7 @@ public class Program
         builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisOptions.Position));
         builder.Services.Configure<RecommendationGrpcOptions>(builder.Configuration.GetSection(RecommendationGrpcOptions.Position));
         builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection(BackgroundJobOptions.Position));
+        builder.Services.AddInfrastructureServices(builder.Configuration);
 
         // Idempotency Store (Singleton)
         builder.Services.AddSingleton<IProcessedEventStore, InMemoryProcessedEventStore>();

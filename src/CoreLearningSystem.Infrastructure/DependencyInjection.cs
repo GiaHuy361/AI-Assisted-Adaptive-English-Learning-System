@@ -37,6 +37,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IKafkaPublisher, KafkaPublisher>();
+        services.AddScoped<ISkillMatrixService, SkillMatrixService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;

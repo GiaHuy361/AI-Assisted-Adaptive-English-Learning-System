@@ -1,9 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using AdaptiveLearning.Contracts.Events;
 using AdaptiveLearning.Worker.Services;
+using CoreLearningSystem.Domain.Entities;
+using CoreLearningSystem.Domain.Enums;
+using CoreLearningSystem.Application.Interfaces;
+using CoreLearningSystem.Application.DTOs.Common;
 using Grpc.Core;
 
 namespace AdaptiveLearning.Worker.Handlers;
@@ -11,11 +16,19 @@ namespace AdaptiveLearning.Worker.Handlers;
 public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
 {
     private readonly IRecommendationGrpcClient _grpcClient;
+    private readonly ISkillMatrixService _skillMatrixService;
+    private readonly IRepository<LearnerProfile> _profileRepo;
     private readonly ILogger<QuizSubmittedEventHandler> _logger;
 
-    public QuizSubmittedEventHandler(IRecommendationGrpcClient grpcClient, ILogger<QuizSubmittedEventHandler> logger)
+    public QuizSubmittedEventHandler(
+        IRecommendationGrpcClient grpcClient,
+        ISkillMatrixService skillMatrixService,
+        IRepository<LearnerProfile> profileRepo,
+        ILogger<QuizSubmittedEventHandler> logger)
     {
         _grpcClient = grpcClient;
+        _skillMatrixService = skillMatrixService;
+        _profileRepo = profileRepo;
         _logger = logger;
     }
 
@@ -55,16 +68,16 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
             throw new RpcException(new Status(StatusCode.InvalidArgument, "AnswerDetails in event cannot be empty."));
         }
 
+        // Call the gRPC Recommendation Client first
+        QuizAnalysisResultModel gRpcResult;
         try
         {
-            // Call the gRPC Recommendation Client
-            var result = await _grpcClient.AnalyzeQuizSubmissionAsync(ev, default);
+            gRpcResult = await _grpcClient.AnalyzeQuizSubmissionAsync(ev, default);
 
-            // Log detailed structured logging format
             _logger.LogInformation("QuizSubmittedEventHandler processed gRPC analysis. EventId: {EventId}, CorrelationId: {CorrelationId}, UserId: {UserId}, QuizId: {QuizId}, WeakestSkill: {WeakestSkill}, WeakTopics: {WeakTopics}, Reason: {Reason}",
-                ev.EventId, ev.CorrelationId, ev.UserId, ev.QuizId, result.WeakestSkill, string.Join(", ", result.WeakTopics), result.Reason);
+                ev.EventId, ev.CorrelationId, ev.UserId, ev.QuizId, gRpcResult.WeakestSkill, string.Join(", ", gRpcResult.WeakTopics), gRpcResult.Reason);
 
-            foreach (var score in result.SkillScores)
+            foreach (var score in gRpcResult.SkillScores)
             {
                 _logger.LogInformation("SkillScore Detail: EventId: {EventId}, Skill: {Skill}, Score: {Score}%, Total: {Total}, Correct: {Correct}, Incorrect: {Incorrect}",
                     ev.EventId, score.Skill, score.Score, score.TotalQuestions, score.CorrectAnswers, score.IncorrectAnswers);
@@ -78,8 +91,85 @@ public class QuizSubmittedEventHandler : IEventHandler<QuizSubmittedEvent>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error in QuizSubmittedEventHandler for EventId: {EventId}", ev.EventId);
+            _logger.LogError(ex, "Unexpected error in gRPC call in QuizSubmittedEventHandler for EventId: {EventId}", ev.EventId);
             throw;
         }
+
+        // Apply Persistence Logic (Skill Matrix & History updates)
+        try
+        {
+            // Resolve LearnerProfile
+            var profiles = await _profileRepo.FindAsync(p => p.UserId == ev.UserId);
+            var profile = profiles.FirstOrDefault();
+            if (profile == null)
+            {
+                _logger.LogWarning("LearnerProfile not found for UserId: {UserId}. Attempting auto-creation to recover flow.", ev.UserId);
+                // Create profile if missing to prevent E2E flow break in tests
+                profile = new LearnerProfile
+                {
+                    UserId = ev.UserId,
+                    Level = EnglishLevel.A1,
+                    ActivityStatus = ActivityStatus.Active,
+                    LastActiveAt = DateTime.UtcNow
+                };
+                await _profileRepo.AddAsync(profile);
+                await _profileRepo.SaveChangesAsync();
+            }
+
+            // Map gRPC scores to DTOs
+            var skillScores = gRpcResult.SkillScores.Select(s => new SkillScoreDto
+            {
+                Skill = MapSkillType(s.Skill),
+                Score = s.Score,
+                TotalQuestions = s.TotalQuestions,
+                CorrectAnswers = s.CorrectAnswers
+            }).ToList();
+
+            // Map raw answer details to get all incorrect topics and counts
+            var weakTopics = ev.AnswerDetails
+                .Where(a => !a.IsCorrect)
+                .GroupBy(a => new { Skill = MapSkillType(a.SkillName), Topic = (a.Topic ?? string.Empty).Trim(), Level = a.Level })
+                .Where(g => !string.IsNullOrEmpty(g.Key.Topic))
+                .Select(g => new WeakTopicDto
+                {
+                    Skill = g.Key.Skill,
+                    Topic = g.Key.Topic,
+                    Level = g.Key.Level,
+                    IncorrectCount = g.Count()
+                })
+                .ToList();
+
+            var updateRequest = new SkillMatrixUpdateRequest
+            {
+                UserId = ev.UserId,
+                LearnerProfileId = profile.Id,
+                EventId = ev.EventId,
+                SourceType = MatrixSourceType.Quiz,
+                SourceId = ev.QuizAttemptId,
+                SkillScores = skillScores,
+                WeakTopics = weakTopics,
+                Level = ev.AnswerDetails.FirstOrDefault()?.Level ?? string.Empty,
+                OccurredAt = ev.SubmittedAt.UtcDateTime
+            };
+
+            var persistenceResult = await _skillMatrixService.UpdateSkillMatrixAsync(updateRequest, default);
+
+            _logger.LogInformation("QuizSubmittedEventHandler successfully persisted Skill Matrix. EventId: {EventId}, UserId: {UserId}, WeakestSkill: {WeakestSkill}, RepeatedWeakTopics: {Repeated}",
+                ev.EventId, ev.UserId, persistenceResult.WeakestSkill, string.Join(", ", persistenceResult.RepeatedWeakTopics));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Persistence failed in QuizSubmittedEventHandler for EventId: {EventId}. Flow will be retried.", ev.EventId);
+            throw; // Throw to trigger Kafka retry and prevent offset commit
+        }
+    }
+
+    private static SkillType MapSkillType(string skill)
+    {
+        if (Enum.TryParse<SkillType>(skill, true, out var result))
+        {
+            return result;
+        }
+        throw new RpcException(new Status(StatusCode.InvalidArgument, $"Invalid or unsupported skill name: '{skill}'"));
     }
 }

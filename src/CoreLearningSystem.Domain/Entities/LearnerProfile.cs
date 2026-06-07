@@ -23,4 +23,7 @@ public class LearnerProfile
     public ICollection<GoalSetting> Goals { get; set; } = new List<GoalSetting>();
     public ICollection<LearnerBadge> UnlockedBadges { get; set; } = new List<LearnerBadge>();
     public ICollection<Feedback> SubmittedFeedbacks { get; set; } = new List<Feedback>();
+    public ICollection<SkillMatrix> SkillMatrices { get; set; } = new List<SkillMatrix>();
+    public ICollection<SkillMatrixHistory> SkillMatrixHistories { get; set; } = new List<SkillMatrixHistory>();
+    public ICollection<LearnerWeaknessHistory> WeaknessHistories { get; set; } = new List<LearnerWeaknessHistory>();
 }

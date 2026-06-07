@@ -27,6 +27,9 @@ public class AppDbContext : DbContext
     public DbSet<LearnerBadge> LearnerBadges => Set<LearnerBadge>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<SkillMatrix> SkillMatrices => Set<SkillMatrix>();
+    public DbSet<SkillMatrixHistory> SkillMatrixHistories => Set<SkillMatrixHistory>();
+    public DbSet<LearnerWeaknessHistory> LearnerWeaknessHistories => Set<LearnerWeaknessHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -303,6 +306,73 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 18. SkillMatrix Configuration
+        modelBuilder.Entity<SkillMatrix>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.SkillMatrices)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.MasteryLevel)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.Skill }).IsUnique();
+        });
+
+        // 19. SkillMatrixHistory Configuration
+        modelBuilder.Entity<SkillMatrixHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.SkillMatrixHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.SourceType)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.HasIndex(e => e.EventId);
+            entity.HasIndex(e => e.LearnerProfileId);
+        });
+
+        // 20. LearnerWeaknessHistory Configuration
+        modelBuilder.Entity<LearnerWeaknessHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.WeaknessHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Topic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Level).HasMaxLength(20);
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.Skill, e.Topic }).IsUnique();
         });
     }
 }
