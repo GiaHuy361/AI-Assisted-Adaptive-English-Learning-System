@@ -170,6 +170,30 @@ public class KafkaConsumerHostedService : BackgroundService
                 }
                 catch (Exception ex)
                 {
+                    bool isTransient = true;
+                    if (ex is Grpc.Core.RpcException rpcEx && 
+                        (rpcEx.StatusCode == Grpc.Core.StatusCode.InvalidArgument ||
+                         rpcEx.StatusCode == Grpc.Core.StatusCode.Unauthenticated ||
+                         rpcEx.StatusCode == Grpc.Core.StatusCode.PermissionDenied ||
+                         rpcEx.StatusCode == Grpc.Core.StatusCode.NotFound))
+                    {
+                        isTransient = false;
+                    }
+                    else if (ex.InnerException is Grpc.Core.RpcException innerRpcEx && 
+                             (innerRpcEx.StatusCode == Grpc.Core.StatusCode.InvalidArgument ||
+                              innerRpcEx.StatusCode == Grpc.Core.StatusCode.Unauthenticated ||
+                              innerRpcEx.StatusCode == Grpc.Core.StatusCode.PermissionDenied ||
+                              innerRpcEx.StatusCode == Grpc.Core.StatusCode.NotFound))
+                    {
+                        isTransient = false;
+                    }
+
+                    if (!isTransient)
+                    {
+                        _logger.LogError(ex, "Non-transient gRPC error encountered. Skipping retries. EventId: {EventId}", eventId);
+                        break;
+                    }
+
                     currentAttempt++;
                     _logger.LogWarning(ex, "Failed to process message (Attempt {Attempt}/{MaxRetry}). EventId: {EventId}", 
                         currentAttempt, _kafkaOptions.RetryCount, eventId);

@@ -31,6 +31,14 @@ public class Program
         builder.Services.AddTransient<IEventHandler<FeedbackSubmittedEvent>, FeedbackSubmittedEventHandler>();
         builder.Services.AddTransient<IEventHandler<PlacementTestCompletedEvent>, PlacementTestCompletedEventHandler>();
 
+        // Register gRPC Client and its Wrapper
+        builder.Services.AddGrpcClient<AdaptiveLearning.GrpcService.RecommendationService.RecommendationServiceClient>((sp, o) =>
+        {
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RecommendationGrpcOptions>>().Value;
+            o.Address = new Uri(options.ServiceUrl);
+        });
+        builder.Services.AddScoped<IRecommendationGrpcClient, RecommendationGrpcClient>();
+
         // Register Kafka Producer (Singleton) for DLQ publish
         builder.Services.AddSingleton<IProducer<string, string>>(sp =>
         {

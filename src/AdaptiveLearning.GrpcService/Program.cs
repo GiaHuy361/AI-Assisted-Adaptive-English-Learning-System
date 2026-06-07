@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddGrpc();
+builder.Services.AddScoped<IQuizWeaknessAnalyzer, QuizWeaknessAnalyzer>();
 
 var app = builder.Build();
 
@@ -16,3 +17,6 @@ app.MapGrpcService<RecommendationGrpcService>();
 app.MapGet("/", () => new { Status = "ONLINE", Service = "AdaptiveLearning.GrpcService", Version = "1.0.0-skeleton" });
 
 app.Run();
+
+public partial class Program { }
+

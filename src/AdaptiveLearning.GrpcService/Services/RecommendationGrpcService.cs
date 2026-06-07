@@ -1,3 +1,6 @@
+using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -6,44 +9,173 @@ namespace AdaptiveLearning.GrpcService.Services;
 
 public class RecommendationGrpcService : RecommendationService.RecommendationServiceBase
 {
+    private readonly IQuizWeaknessAnalyzer _analyzer;
     private readonly ILogger<RecommendationGrpcService> _logger;
 
-    public RecommendationGrpcService(ILogger<RecommendationGrpcService> logger)
+    public RecommendationGrpcService(IQuizWeaknessAnalyzer analyzer, ILogger<RecommendationGrpcService> logger)
     {
+        _analyzer = analyzer;
         _logger = logger;
     }
 
-    public override Task<RecommendationResponse> GetRecommendations(RecommendationRequest request, ServerCallContext context)
+    public override async Task<AnalyzeQuizSubmissionResponse> AnalyzeQuizSubmission(AnalyzeQuizSubmissionRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("gRPC GetRecommendations request received for User: {UserId}", request.UserId);
+        var stopwatch = Stopwatch.StartNew();
+        
+        _logger.LogInformation("gRPC AnalyzeQuizSubmission request received. EventId: {EventId}, CorrelationId: {CorrelationId}, UserId: {UserId}, QuizId: {QuizId}, QuizAttemptId: {QuizAttemptId}",
+            request.EventId, request.CorrelationId, request.UserId, request.QuizId, request.QuizAttemptId);
 
-        var response = new RecommendationResponse
+        try
         {
-            UserId = request.UserId,
-            Explanation = "Placeholder recommendation explanation (Phase 1 Skeleton)."
-        };
+            // --- VALIDATION RULES (InvalidArgument) ---
+            if (string.IsNullOrWhiteSpace(request.EventId) || !Guid.TryParse(request.EventId, out _))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "EventId must be a valid, non-empty GUID string."));
+            }
 
-        // Return empty or dummy recommendations
-        response.RecommendedLessonIds.Add("dummy-lesson-1");
-        response.RecommendedLessonIds.Add("dummy-lesson-2");
+            if (string.IsNullOrWhiteSpace(request.CorrelationId) || !Guid.TryParse(request.CorrelationId, out _))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "CorrelationId must be a valid, non-empty GUID string."));
+            }
 
-        return Task.FromResult(response);
-    }
+            if (request.UserId <= 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "UserId must be positive."));
+            }
 
-    public override Task<WeaknessAnalysisResponse> GetWeaknessAnalysis(WeaknessAnalysisRequest request, ServerCallContext context)
-    {
-        _logger.LogInformation("gRPC GetWeaknessAnalysis request received for User: {UserId}", request.UserId);
+            if (request.QuizId <= 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "QuizId must be positive."));
+            }
 
-        var response = new WeaknessAnalysisResponse
+            if (request.QuizAttemptId <= 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "QuizAttemptId must be positive."));
+            }
+
+            if (request.TotalQuestions <= 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "TotalQuestions must be positive."));
+            }
+
+            if (request.CorrectAnswers < 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "CorrectAnswers cannot be negative."));
+            }
+
+            if (request.CorrectAnswers > request.TotalQuestions)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "CorrectAnswers cannot exceed TotalQuestions."));
+            }
+
+            if (request.Answers == null || request.Answers.Count == 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Answers list cannot be empty."));
+            }
+
+            // Consistency checks
+            if (request.Answers.Count != request.TotalQuestions)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, $"Answer count ({request.Answers.Count}) does not match TotalQuestions ({request.TotalQuestions})."));
+            }
+
+            var correctCountInAnswers = request.Answers.Count(a => a.IsCorrect);
+            if (correctCountInAnswers != request.CorrectAnswers)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, $"Correct answer count in list ({correctCountInAnswers}) does not match CorrectAnswers ({request.CorrectAnswers})."));
+            }
+
+            // Answer details validation
+            foreach (var ans in request.Answers)
+            {
+                if (ans == null)
+                {
+                    throw new RpcException(new Status(StatusCode.InvalidArgument, "Answer detail entry cannot be null."));
+                }
+                if (ans.QuestionId <= 0)
+                {
+                    throw new RpcException(new Status(StatusCode.InvalidArgument, "QuestionId in answer detail must be positive."));
+                }
+                if (string.IsNullOrWhiteSpace(ans.Skill))
+                {
+                    throw new RpcException(new Status(StatusCode.InvalidArgument, "Skill name in answer detail cannot be empty."));
+                }
+            }
+
+            // Support CancellationToken from client call
+            context.CancellationToken.ThrowIfCancellationRequested();
+
+            // Map Protobuf to Internal Analyzer Model
+            var input = new QuizAnalysisInput
+            {
+                UserId = request.UserId,
+                QuizId = request.QuizId,
+                QuizAttemptId = request.QuizAttemptId,
+                Score = request.Score,
+                TotalQuestions = request.TotalQuestions,
+                CorrectAnswers = request.CorrectAnswers,
+                Answers = request.Answers.Select(a => new AnswerAnalysisDetail
+                {
+                    QuestionId = a.QuestionId,
+                    Skill = a.Skill,
+                    Topic = a.Topic ?? string.Empty,
+                    Level = a.Level ?? string.Empty,
+                    IsCorrect = a.IsCorrect
+                }).ToList()
+            };
+
+            // Call transport-independent analyzer
+            var result = await _analyzer.AnalyzeAsync(input);
+
+            // Map result back to protobuf response
+            var response = new AnalyzeQuizSubmissionResponse
+            {
+                Success = true,
+                AnalysisId = result.AnalysisId,
+                UserId = result.UserId,
+                WeakestSkill = result.WeakestSkill,
+                Reason = result.Reason,
+                ProcessedAt = result.ProcessedAt,
+                Message = "Quiz submission weakness analysis completed successfully."
+            };
+
+            response.WeakTopics.AddRange(result.WeakTopics);
+            response.SkillScores.AddRange(result.SkillScores.Select(s => new SkillScore
+            {
+                Skill = s.Skill,
+                Score = s.Score,
+                TotalQuestions = s.TotalQuestions,
+                CorrectAnswers = s.CorrectAnswers,
+                IncorrectAnswers = s.IncorrectAnswers
+            }));
+
+            stopwatch.Stop();
+            _logger.LogInformation("gRPC AnalyzeQuizSubmission completed successfully. EventId: {EventId}, CorrelationId: {CorrelationId}, UserId: {UserId}, WeakestSkill: {WeakestSkill}, Duration: {DurationMs}ms",
+                request.EventId, request.CorrelationId, request.UserId, result.WeakestSkill, stopwatch.ElapsedMilliseconds);
+
+            return response;
+        }
+        catch (RpcException ex)
         {
-            UserId = request.UserId,
-            Details = "Placeholder weakness analysis details (Phase 1 Skeleton)."
-        };
-
-        response.WeakSkills.Add("Listening");
-        response.WeakSkills.Add("Grammar");
-
-        return Task.FromResult(response);
+            stopwatch.Stop();
+            _logger.LogWarning(ex, "gRPC validation failed for EventId: {EventId}, CorrelationId: {CorrelationId}. Error: {ErrorReason}",
+                request.EventId, request.CorrelationId, ex.Status.Detail);
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            stopwatch.Stop();
+            _logger.LogWarning("gRPC request cancelled by client. EventId: {EventId}, CorrelationId: {CorrelationId}",
+                request.EventId, request.CorrelationId);
+            throw new RpcException(new Status(StatusCode.Cancelled, "Request was cancelled."));
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "Unexpected error occurred during AnalyzeQuizSubmission. EventId: {EventId}, CorrelationId: {CorrelationId}",
+                request.EventId, request.CorrelationId);
+            throw new RpcException(new Status(StatusCode.Internal, "An unexpected internal error occurred on the server."));
+        }
     }
 
     public override Task<StatusResponse> GetServiceStatus(StatusRequest request, ServerCallContext context)
@@ -52,8 +184,10 @@ public class RecommendationGrpcService : RecommendationService.RecommendationSer
 
         return Task.FromResult(new StatusResponse
         {
+            ServiceName = "AdaptiveLearning.GrpcService",
             Status = "HEALTHY",
-            Version = "1.0.0-skeleton"
+            Version = "1.0.0",
+            ServerTime = DateTime.UtcNow.ToString("o")
         });
     }
 }
