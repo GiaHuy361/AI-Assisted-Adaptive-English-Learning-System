@@ -1,10 +1,3 @@
-using System;
-using System.Threading.Tasks;
-
-namespace AdaptiveLearning.Worker.Services;
-
-public interface IProcessedEventStore
-{
-    Task<bool> HasBeenProcessedAsync(Guid eventId);
-    Task MarkAsProcessedAsync(Guid eventId, TimeSpan? ttl = null);
-}
+// IProcessedEventStore has been moved to CoreLearningSystem.Application.Interfaces.
+// This file is kept as a backward-compat re-export so existing using directives in handler files still work.
+global using IProcessedEventStore = CoreLearningSystem.Application.Interfaces.IProcessedEventStore;

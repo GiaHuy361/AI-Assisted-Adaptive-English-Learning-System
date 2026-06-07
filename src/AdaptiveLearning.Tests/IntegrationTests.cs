@@ -15,6 +15,7 @@ using AdaptiveLearning.Worker;
 using AdaptiveLearning.Worker.Consumers;
 using AdaptiveLearning.Worker.Options;
 using AdaptiveLearning.Worker.Services;
+using CoreLearningSystem.Application.Interfaces;
 
 namespace AdaptiveLearning.Tests;
 

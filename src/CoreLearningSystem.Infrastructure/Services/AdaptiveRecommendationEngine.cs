@@ -18,7 +18,8 @@ public class AdaptiveRecommendationEngine : IAdaptiveRecommendationEngine
         List<string> currentEventWeakTopics,
         EnglishLevel currentLevel,
         string sourceEventId,
-        List<GoalSetting>? activeGoals = null)
+        List<GoalSetting>? activeGoals = null,
+        Dictionary<int, double>? feedbackScores = null)
     {
         if (candidateLessons == null) throw new ArgumentNullException(nameof(candidateLessons));
         if (profile == null) throw new ArgumentNullException(nameof(profile));
@@ -202,8 +203,16 @@ public class AdaptiveRecommendationEngine : IAdaptiveRecommendationEngine
                 }
             }
 
+            // Component G: Feedback bonus/penalty (injected by service; clamped ±10)
+            // feedbackScores[lessonId] = delta (positive = positive feedback bonus, negative = penalty)
+            double feedbackDelta = 0;
+            if (feedbackScores != null && feedbackScores.TryGetValue(lesson.Id, out var delta))
+            {
+                feedbackDelta = Math.Clamp(delta, -10.0, 10.0);
+            }
+
             // Total clamped priority score
-            double totalScore = skillScoreVal + topicScoreVal + levelScoreVal + repeatedScoreVal + goalScoreVal + recencyScoreVal;
+            double totalScore = skillScoreVal + topicScoreVal + levelScoreVal + repeatedScoreVal + goalScoreVal + recencyScoreVal + feedbackDelta;
             totalScore = Math.Clamp(totalScore, 0.0, 100.0);
 
             // Construct recommendation reasons

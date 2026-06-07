@@ -3,11 +3,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CoreLearningSystem.Application.Interfaces;
+using CoreLearningSystem.Application.Options;
 using CoreLearningSystem.Infrastructure.Persistence;
 using CoreLearningSystem.Infrastructure.Persistence.Repositories;
 using CoreLearningSystem.Infrastructure.Services;
 using Hangfire;
 using Hangfire.MySql;
+using StackExchange.Redis;
 
 namespace CoreLearningSystem.Infrastructure;
 
@@ -54,9 +56,36 @@ public static class DependencyInjection
         services.AddScoped<IAchievementService, AchievementService>();
 
         // Phase 7 options
-        services.Configure<CoreLearningSystem.Application.Options.EmailOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.EmailOptions.Position));
-        services.Configure<CoreLearningSystem.Application.Options.JobScheduleOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.JobScheduleOptions.Position));
-        services.Configure<CoreLearningSystem.Application.Options.CleanupOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.CleanupOptions.Position));
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Position));
+        services.Configure<JobScheduleOptions>(configuration.GetSection(JobScheduleOptions.Position));
+        services.Configure<CleanupOptions>(configuration.GetSection(CleanupOptions.Position));
+
+        // Phase 8 options
+        services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.Position));
+        services.Configure<FeedbackAnalysisOptions>(configuration.GetSection(FeedbackAnalysisOptions.Position));
+        services.Configure<FeedbackRecommendationOptions>(configuration.GetSection(FeedbackRecommendationOptions.Position));
+
+        // Phase 8: Redis connection (Singleton — one multiplexer for the lifetime)
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var redisSection = configuration.GetSection(RedisOptions.Position);
+            var connStr = redisSection["ConnectionString"] ?? "localhost:6379";
+            var configOpts = ConfigurationOptions.Parse(connStr);
+            configOpts.AbortOnConnectFail = false; // graceful degradation
+            configOpts.ConnectRetry = 3;
+            configOpts.ConnectTimeout = 3000;
+            return ConnectionMultiplexer.Connect(configOpts);
+        });
+
+        // Phase 8: Cache services
+        services.AddSingleton<ICacheKeyBuilder, CacheKeyBuilder>();
+        services.AddSingleton<ICacheService, RedisCacheService>();
+
+        // Phase 8: Distributed idempotency store (Redis-backed)
+        services.AddSingleton<IProcessedEventStore, RedisProcessedEventStore>();
+
+        // Phase 8: Feedback Analysis
+        services.AddScoped<IFeedbackAnalysisService, FeedbackAnalysisService>();
 
         // Services
         services.AddScoped<INotificationService, NotificationService>();

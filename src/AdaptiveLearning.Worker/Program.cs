@@ -8,9 +8,10 @@ using AdaptiveLearning.Worker.Handlers;
 using AdaptiveLearning.Worker.Consumers;
 using AdaptiveLearning.Contracts.Events;
 using CoreLearningSystem.Infrastructure;
+using CoreLearningSystem.Infrastructure.Services;
 using Hangfire;
 using CoreLearningSystem.Application.Options;
-using CoreLearningSystem.Infrastructure.Services;
+using CoreLearningSystem.Application.Interfaces;
 
 namespace AdaptiveLearning.Worker;
 
@@ -27,8 +28,7 @@ public class Program
         builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection(BackgroundJobOptions.Position));
         builder.Services.AddInfrastructureServices(builder.Configuration);
 
-        // Idempotency Store (Singleton)
-        builder.Services.AddSingleton<IProcessedEventStore, InMemoryProcessedEventStore>();
+        // NOTE: IProcessedEventStore (RedisProcessedEventStore) is registered by AddInfrastructureServices above.
 
         // Register Handlers
         builder.Services.AddTransient<IEventHandler<QuizSubmittedEvent>, QuizSubmittedEventHandler>();

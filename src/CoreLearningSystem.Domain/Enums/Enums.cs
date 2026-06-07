@@ -147,7 +147,8 @@ public enum NotificationType
     BadgeAwarded,
     GoalAtRisk,
     SkillDecayWarning,
-    System
+    System,
+    FeedbackAlert
 }
 
 public enum NotificationChannel
@@ -174,4 +175,29 @@ public enum JobStatus
     Failed,
     Cancelled
 }
+
+public enum FeedbackTargetType
+{
+    Lesson,
+    Quiz,
+    Recommendation,
+    System
+}
+
+public enum FeedbackStatus
+{
+    Pending,
+    Reviewed,
+    Resolved,
+    Rejected
+}
+
+public enum FeedbackAlertStatus
+{
+    Normal,
+    Warning,
+    Critical,
+    Resolved
+}
+
 

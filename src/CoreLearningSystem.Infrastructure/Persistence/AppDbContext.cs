@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
     public DbSet<LearnerBadge> LearnerBadges => Set<LearnerBadge>();
     public DbSet<GoalProgressHistory> GoalProgressHistories => Set<GoalProgressHistory>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
+    public DbSet<FeedbackAnalysis> FeedbackAnalyses => Set<FeedbackAnalysis>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<SkillMatrix> SkillMatrices => Set<SkillMatrix>();
     public DbSet<SkillMatrixHistory> SkillMatrixHistories => Set<SkillMatrixHistory>();
@@ -341,10 +342,34 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Content).IsRequired().HasColumnType("longtext");
             entity.Property(e => e.ReviewComment).HasMaxLength(1000);
 
+            entity.Property(e => e.TargetType)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
             entity.HasOne(e => e.LearnerProfile)
                 .WithMany(lp => lp.SubmittedFeedbacks)
                 .HasForeignKey(e => e.LearnerProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // FeedbackAnalysis Configuration
+        modelBuilder.Entity<FeedbackAnalysis>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AggregateKey).IsRequired().HasMaxLength(150);
+            entity.HasIndex(e => e.AggregateKey).IsUnique();
+
+            entity.Property(e => e.TargetType)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.Property(e => e.AlertStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20);
         });
 
         // 17. Notification Configuration
