@@ -1,6 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+using Confluent.Kafka;
 using AdaptiveLearning.Worker.Options;
+using AdaptiveLearning.Worker.Services;
+using AdaptiveLearning.Worker.Handlers;
+using AdaptiveLearning.Worker.Consumers;
+using AdaptiveLearning.Contracts.Events;
 
 namespace AdaptiveLearning.Worker;
 
@@ -16,8 +22,31 @@ public class Program
         builder.Services.Configure<RecommendationGrpcOptions>(builder.Configuration.GetSection(RecommendationGrpcOptions.Position));
         builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection(BackgroundJobOptions.Position));
 
-        // Register worker hosted service
-        builder.Services.AddHostedService<Worker>();
+        // Idempotency Store (Singleton)
+        builder.Services.AddSingleton<IProcessedEventStore, InMemoryProcessedEventStore>();
+
+        // Register Handlers
+        builder.Services.AddTransient<IEventHandler<QuizSubmittedEvent>, QuizSubmittedEventHandler>();
+        builder.Services.AddTransient<IEventHandler<LessonCompletedEvent>, LessonCompletedEventHandler>();
+        builder.Services.AddTransient<IEventHandler<FeedbackSubmittedEvent>, FeedbackSubmittedEventHandler>();
+        builder.Services.AddTransient<IEventHandler<PlacementTestCompletedEvent>, PlacementTestCompletedEventHandler>();
+
+        // Register Kafka Producer (Singleton) for DLQ publish
+        builder.Services.AddSingleton<IProducer<string, string>>(sp =>
+        {
+            var bootstrapServers = builder.Configuration.GetValue<string>("Kafka:BootstrapServers") ?? "localhost:9092";
+            var config = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                Acks = Acks.All,
+                MessageTimeoutMs = 5000,
+                EnableIdempotence = true
+            };
+            return new ProducerBuilder<string, string>(config).Build();
+        });
+
+        // Register Consumer Background Service
+        builder.Services.AddHostedService<KafkaConsumerHostedService>();
 
         var host = builder.Build();
         host.Run();

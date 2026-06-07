@@ -24,4 +24,16 @@ public class MockKafkaPublisher : IKafkaPublisher
         Console.WriteLine($"[Kafka Mock] GoalCompletedEvent fired: GoalId={ev.GoalId}, LearnerId={ev.LearnerProfileId}, Target={ev.Target}");
         return Task.CompletedTask;
     }
+
+    public Task PublishLessonCompletedAsync(LessonCompletedEvent ev)
+    {
+        Console.WriteLine($"[Kafka Mock] LessonCompletedEvent fired: LearnerId={ev.LearnerProfileId}, LessonId={ev.LessonId}");
+        return Task.CompletedTask;
+    }
+
+    public Task PublishFeedbackSubmittedAsync(FeedbackSubmittedEvent ev)
+    {
+        Console.WriteLine($"[Kafka Mock] FeedbackSubmittedEvent fired: LearnerId={ev.LearnerProfileId}, Rating={ev.Rating}");
+        return Task.CompletedTask;
+    }
 }

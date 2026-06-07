@@ -1,6 +1,6 @@
 using System;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CoreLearningSystem.Application.Interfaces;
 using CoreLearningSystem.Infrastructure.Persistence;
@@ -22,7 +22,21 @@ public static class DependencyInjection
             ));
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-        services.AddScoped<IKafkaPublisher, MockKafkaPublisher>();
+        
+        // Register Real Kafka Producer as Singleton
+        services.AddSingleton<Confluent.Kafka.IProducer<string, string>>(sp =>
+        {
+            var config = new Confluent.Kafka.ProducerConfig
+            {
+                BootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092",
+                Acks = Confluent.Kafka.Acks.All,
+                MessageTimeoutMs = 5000,
+                EnableIdempotence = true
+            };
+            return new Confluent.Kafka.ProducerBuilder<string, string>(config).Build();
+        });
+
+        services.AddScoped<IKafkaPublisher, KafkaPublisher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
