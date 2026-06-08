@@ -26,3 +26,22 @@ public record GoalCompletedEvent(
     string Target,
     DateTime Timestamp
 );
+
+public record LessonCompletedEvent(
+    int LearnerProfileId,
+    int LessonId,
+    string SkillName,
+    string Topic,
+    string Level,
+    DateTime Timestamp
+);
+
+public record FeedbackSubmittedEvent(
+    int LearnerProfileId,
+    string TargetType,
+    int? TargetId,
+    int Rating,
+    string Comment,
+    DateTime Timestamp
+);
+

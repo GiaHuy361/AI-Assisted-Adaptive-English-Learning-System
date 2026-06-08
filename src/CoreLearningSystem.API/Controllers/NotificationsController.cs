@@ -25,6 +25,17 @@ public class NotificationsController : ApiControllerBase
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<ApiResponse<IEnumerable<NotificationDto>>>> GetByUserId(int userId)
     {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int currentUserId))
+        {
+            return Unauthorized(ApiResponse<IEnumerable<NotificationDto>>.FailureResponse("Unauthorized."));
+        }
+
+        if (currentUserId != userId && !User.IsInRole("Admin"))
+        {
+            return Forbid();
+        }
+
         var result = await Mediator.Send(new GetNotificationsQuery(userId));
         return Ok(result);
     }
@@ -32,7 +43,13 @@ public class NotificationsController : ApiControllerBase
     [HttpPut("{id}/read")]
     public async Task<ActionResult<ApiResponse<bool>>> MarkAsRead(int id)
     {
-        var result = await Mediator.Send(new MarkNotificationAsReadCommand(id));
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized(ApiResponse<bool>.FailureResponse("Unauthorized. Please log in."));
+        }
+
+        var result = await Mediator.Send(new MarkNotificationAsReadCommand(id, userId));
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }

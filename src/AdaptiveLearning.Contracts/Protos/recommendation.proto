@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+option csharp_namespace = "AdaptiveLearning.GrpcService";
+
+package recommendation;
+
+service RecommendationService {
+  rpc AnalyzeQuizSubmission (AnalyzeQuizSubmissionRequest) returns (AnalyzeQuizSubmissionResponse);
+  rpc GenerateRecommendations (GenerateRecommendationsRequest) returns (GenerateRecommendationsResponse);
+  rpc GetServiceStatus (StatusRequest) returns (StatusResponse);
+}
+
+message AnalyzeQuizSubmissionRequest {
+  string event_id = 1;
+  string correlation_id = 2;
+  int32 user_id = 3;
+  int32 quiz_id = 4;
+  int32 quiz_attempt_id = 5;
+  double score = 6;
+  int32 total_questions = 7;
+  int32 correct_answers = 8;
+  string submitted_at = 9;
+  repeated AnswerDetail answers = 10;
+}
+
+message AnswerDetail {
+  int32 question_id = 1;
+  string skill = 2;
+  string topic = 3;
+  string level = 4;
+  bool is_correct = 5;
+}
+
+message AnalyzeQuizSubmissionResponse {
+  bool success = 1;
+  string analysis_id = 2;
+  int32 user_id = 3;
+  string weakest_skill = 4;
+  repeated string weak_topics = 5;
+  repeated SkillScore skill_scores = 6;
+  string reason = 7;
+  string processed_at = 8;
+  string message = 9;
+}
+
+message SkillScore {
+  string skill = 1;
+  double score = 2;
+  int32 total_questions = 3;
+  int32 correct_answers = 4;
+  int32 incorrect_answers = 5;
+}
+
+message GenerateRecommendationsRequest {
+  string event_id = 1;
+  string correlation_id = 2;
+  int32 user_id = 3;
+  int32 learner_profile_id = 4;
+  string weakest_skill = 5;
+  repeated string weak_topics = 6;
+  string current_level = 7;
+  int32 max_recommendations = 8;
+}
+
+message GenerateRecommendationsResponse {
+  bool success = 1;
+  string generated_at = 2;
+  repeated RecommendedLesson recommendations = 3;
+  string overall_reason = 4;
+  string message = 5;
+}
+
+message RecommendedLesson {
+  int32 lesson_id = 1;
+  string title = 2;
+  string skill = 3;
+  string topic = 4;
+  string level = 5;
+  double priority_score = 6;
+  string reason = 7;
+}
+
+message StatusRequest {}
+
+message StatusResponse {
+  string service_name = 1;
+  string status = 2;
+  string version = 3;
+  string server_time = 4;
+}

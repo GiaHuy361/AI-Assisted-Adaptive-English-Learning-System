@@ -34,15 +34,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
 {
     private readonly IRepository<User> _userRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
+    private readonly IRepository<UserSession> _sessionRepository;
     private readonly IJwtTokenGenerator _tokenGenerator;
 
     public RegisterCommandHandler(
         IRepository<User> userRepository, 
         IRepository<LearnerProfile> profileRepository,
+        IRepository<UserSession> sessionRepository,
         IJwtTokenGenerator tokenGenerator)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
+        _sessionRepository = sessionRepository;
         _tokenGenerator = tokenGenerator;
     }
 
@@ -89,8 +92,24 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, ApiRespon
             throw;
         }
 
-        var token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.Role.ToString());
-        var response = new AuthResponseDto(token, user.Username, user.Role.ToString(), user.Id, "Chưa làm bài đánh giá");
+        var tokenResult = _tokenGenerator.GenerateToken(user.Id, user.Username, user.Role.ToString());
+        
+        // Save session
+        var tokenHash = TokenHasher.HashToken(tokenResult.Token);
+
+        var session = new UserSession
+        {
+            UserId = user.Id,
+            SessionTokenHash = tokenHash,
+            JwtId = tokenResult.JwtId,
+            ExpiresAt = tokenResult.ExpiresAt,
+            Status = SessionStatus.Active,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _sessionRepository.AddAsync(session);
+        await _sessionRepository.SaveChangesAsync();
+
+        var response = new AuthResponseDto(tokenResult.Token, user.Username, user.Role.ToString(), user.Id, "Chưa làm bài đánh giá");
         
         return ApiResponse<AuthResponseDto>.SuccessResponse(response, "Registration successful!");
     }
@@ -113,17 +132,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
     private readonly IRepository<User> _userRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
     private readonly IRepository<PlacementTestResult> _testResultRepository;
+    private readonly IRepository<UserSession> _sessionRepository;
     private readonly IJwtTokenGenerator _tokenGenerator;
 
     public LoginCommandHandler(
         IRepository<User> userRepository, 
         IRepository<LearnerProfile> profileRepository,
         IRepository<PlacementTestResult> testResultRepository,
+        IRepository<UserSession> sessionRepository,
         IJwtTokenGenerator tokenGenerator)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
         _testResultRepository = testResultRepository;
+        _sessionRepository = sessionRepository;
         _tokenGenerator = tokenGenerator;
     }
 
@@ -169,8 +191,24 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, ApiResponse<Aut
             }
         }
 
-        var token = _tokenGenerator.GenerateToken(user.Id, user.Username, user.Role.ToString());
-        var response = new AuthResponseDto(token, user.Username, user.Role.ToString(), user.Id, level);
+        var tokenResult = _tokenGenerator.GenerateToken(user.Id, user.Username, user.Role.ToString());
+
+        // Save session
+        var tokenHash = TokenHasher.HashToken(tokenResult.Token);
+
+        var session = new UserSession
+        {
+            UserId = user.Id,
+            SessionTokenHash = tokenHash,
+            JwtId = tokenResult.JwtId,
+            ExpiresAt = tokenResult.ExpiresAt,
+            Status = SessionStatus.Active,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _sessionRepository.AddAsync(session);
+        await _sessionRepository.SaveChangesAsync();
+
+        var response = new AuthResponseDto(tokenResult.Token, user.Username, user.Role.ToString(), user.Id, level);
 
         return ApiResponse<AuthResponseDto>.SuccessResponse(response, "Login successful!");
     }

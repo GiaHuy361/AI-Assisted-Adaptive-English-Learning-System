@@ -30,6 +30,16 @@ namespace CoreLearningSystem.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AchievementType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
                     b.Property<string>("Criteria")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -45,12 +55,28 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("varchar(150)");
 
+                    b.Property<string>("SkillTarget")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<double>("Threshold")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.ToTable("AchievementBadges");
                 });
@@ -81,6 +107,111 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.ToTable("AnswerOptions");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.BackgroundJobExecution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<double>("DurationMilliseconds")
+                        .HasColumnType("double");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("ExecutionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("FailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JobName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<int>("ProcessedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkippedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<int>("SuccessCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TriggerType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BackgroundJobExecutions");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.CertificateTestResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CertificateType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("MaxScore")
+                        .HasColumnType("double");
+
+                    b.Property<bool>("Passed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<double>("Score")
+                        .HasColumnType("double");
+
+                    b.Property<int?>("SourceQuizAttemptId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TakenAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<double>("TargetScore")
+                        .HasColumnType("double");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerProfileId");
+
+                    b.ToTable("CertificateTestResults");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.Feedback", b =>
                 {
                     b.Property<int>("Id")
@@ -88,6 +219,9 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminResponse")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -98,6 +232,9 @@ namespace CoreLearningSystem.Infrastructure.Migrations
 
                     b.Property<int>("LearnerProfileId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("Rating")
                         .HasColumnType("int");
@@ -112,16 +249,152 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Property<int?>("ReviewedByAdminId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
+
+                    b.Property<int?>("TargetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("LearnerProfileId");
 
                     b.ToTable("Feedbacks");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.FeedbackAnalysis", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AggregateKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("AlertStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("AlertedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("double");
+
+                    b.Property<int>("FeedbackCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastAnalyzedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("LastFeedbackAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LowRatingCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NegativeCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NeutralCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PositiveCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TargetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AggregateKey")
+                        .IsUnique();
+
+                    b.ToTable("FeedbackAnalyses");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.GoalProgressHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("AddedValue")
+                        .HasColumnType("double");
+
+                    b.Property<int>("GoalId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("NewValue")
+                        .HasColumnType("double");
+
+                    b.Property<double>("PreviousValue")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SourceEventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("StatusAfter")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("StatusBefore")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerProfileId");
+
+                    b.HasIndex("GoalId", "SourceEventId")
+                        .IsUnique();
+
+                    b.ToTable("GoalProgressHistories");
                 });
 
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.GoalSetting", b =>
@@ -132,8 +405,14 @@ namespace CoreLearningSystem.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<double>("CurrentValue")
+                        .HasColumnType("double");
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("datetime(6)");
@@ -147,15 +426,42 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Property<double>("ProgressPercentage")
                         .HasColumnType("double");
 
+                    b.Property<string>("SkillTarget")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Target")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("TargetLevel")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<double>("TargetValue")
+                        .HasColumnType("double");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -178,6 +484,19 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Property<int>("LearnerProfileId")
                         .HasColumnType("int");
 
+                    b.Property<double>("ProgressValue")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("SourceEventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<DateTime>("UnlockedAt")
                         .HasColumnType("datetime(6)");
 
@@ -185,7 +504,8 @@ namespace CoreLearningSystem.Infrastructure.Migrations
 
                     b.HasIndex("BadgeId");
 
-                    b.HasIndex("LearnerProfileId");
+                    b.HasIndex("LearnerProfileId", "BadgeId")
+                        .IsUnique();
 
                     b.ToTable("LearnerBadges");
                 });
@@ -252,6 +572,63 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.HasIndex("LessonId");
 
                     b.ToTable("LearnerProgresses");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.LearnerWeaknessHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FirstOccurredAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("IncorrectCount")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("LastEventId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("LastOccurredAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("OccurrenceCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("SourceQuizAttemptId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerProfileId", "Skill", "Topic")
+                        .IsUnique();
+
+                    b.ToTable("LearnerWeaknessHistories");
                 });
 
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.LearningPath", b =>
@@ -376,30 +753,198 @@ namespace CoreLearningSystem.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SourceEventId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("SourceId")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("SourceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.NotificationDeliveryAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("AttemptedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("NotificationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId");
+
+                    b.ToTable("NotificationDeliveryAttempts");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.OutboxMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AggregateId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("AggregateType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("HeadersJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.ToTable("OutboxMessages");
                 });
 
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.PlacementTestResult", b =>
@@ -599,6 +1144,361 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.ToTable("QuizAttemptDetails");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.Recommendation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DismissedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<double>("PriorityScore")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("SourceEventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("SourceEventId");
+
+                    b.HasIndex("LearnerProfileId", "LessonId");
+
+                    b.HasIndex("LearnerProfileId", "Status");
+
+                    b.ToTable("Recommendations");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.RecommendationEffectiveness", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("EvaluatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<double>("Improvement")
+                        .HasColumnType("double");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecommendationId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("ScoreAfter")
+                        .HasColumnType("double");
+
+                    b.Property<double>("ScoreBefore")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int?>("SourceQuizAttemptId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<bool>("WasEffective")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerProfileId");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("RecommendationId");
+
+                    b.ToTable("RecommendationEffectivenesses");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.RecommendationHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("PreviousStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("RecommendationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SourceEventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerProfileId");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("RecommendationId");
+
+                    b.HasIndex("RecordedAt");
+
+                    b.HasIndex("SourceEventId");
+
+                    b.ToTable("RecommendationHistories");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.RecommendationStatisticSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("AverageImprovement")
+                        .HasColumnType("double");
+
+                    b.Property<int>("CompletionCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EffectiveCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("EffectivenessRate")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RecommendationCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Skill")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Topic")
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId");
+
+                    b.ToTable("RecommendationStatisticSnapshots");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.SkillMatrix", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<double>("CurrentScore")
+                        .HasColumnType("double");
+
+                    b.Property<double>("LastAssessmentScore")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MasteryLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("TotalAssessments")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerProfileId", "Skill")
+                        .IsUnique();
+
+                    b.ToTable("SkillMatrices");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.SkillMatrixHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("AssessmentScore")
+                        .HasColumnType("double");
+
+                    b.Property<string>("DecayPeriodKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("NewScore")
+                        .HasColumnType("double");
+
+                    b.Property<double>("PreviousScore")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("SkillMatrixId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SourceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("LearnerProfileId");
+
+                    b.HasIndex("SkillMatrixId", "DecayPeriodKey")
+                        .IsUnique();
+
+                    b.ToTable("SkillMatrixHistories");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -651,6 +1551,128 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.UserSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("JwtId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RefreshTokenHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SessionTokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JwtId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserSessions");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.WeeklyLearningReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("AverageScore")
+                        .HasColumnType("double");
+
+                    b.Property<string>("BadgesEarned")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GoalProgressSummary")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("LearnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LessonsCompleted")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("NotificationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuizzesCompleted")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecommendationsCompleted")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StreakDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StrongestSkill")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("WeakestSkill")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("WeekEnd")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("WeekStart")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId");
+
+                    b.HasIndex("LearnerProfileId", "WeekStart")
+                        .IsUnique();
+
+                    b.ToTable("WeeklyLearningReports");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.AnswerOption", b =>
                 {
                     b.HasOne("CoreLearningSystem.Domain.Entities.Question", "Question")
@@ -662,6 +1684,17 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.CertificateTestResult", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("CertificateTestResults")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.Feedback", b =>
                 {
                     b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
@@ -669,6 +1702,25 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                         .HasForeignKey("LearnerProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.GoalProgressHistory", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.GoalSetting", "Goal")
+                        .WithMany("ProgressHistories")
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("GoalProgressHistories")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Goal");
 
                     b.Navigation("LearnerProfile");
                 });
@@ -733,6 +1785,17 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.LearnerWeaknessHistory", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("WeaknessHistories")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.LearningPath", b =>
                 {
                     b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
@@ -782,6 +1845,17 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.NotificationDeliveryAttempt", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Notification", "Notification")
+                        .WithMany("DeliveryAttempts")
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notification");
                 });
 
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.PlacementTestResult", b =>
@@ -851,13 +1925,156 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Navigation("SelectedAnswerOption");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.Recommendation", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("Recommendations")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.RecommendationEffectiveness", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("RecommendationEffectivenesses")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Recommendation", "Recommendation")
+                        .WithMany()
+                        .HasForeignKey("RecommendationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+
+                    b.Navigation("Lesson");
+
+                    b.Navigation("Recommendation");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.RecommendationHistory", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("RecommendationHistories")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Recommendation", "Recommendation")
+                        .WithMany()
+                        .HasForeignKey("RecommendationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+
+                    b.Navigation("Lesson");
+
+                    b.Navigation("Recommendation");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.RecommendationStatisticSnapshot", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.SkillMatrix", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("SkillMatrices")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.SkillMatrixHistory", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("SkillMatrixHistories")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LearnerProfile");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.UserSession", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.User", "User")
+                        .WithMany("Sessions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.WeeklyLearningReport", b =>
+                {
+                    b.HasOne("CoreLearningSystem.Domain.Entities.LearnerProfile", "LearnerProfile")
+                        .WithMany("WeeklyLearningReports")
+                        .HasForeignKey("LearnerProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoreLearningSystem.Domain.Entities.Notification", "Notification")
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("LearnerProfile");
+
+                    b.Navigation("Notification");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.AchievementBadge", b =>
                 {
                     b.Navigation("AwardedLearners");
                 });
 
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.GoalSetting", b =>
+                {
+                    b.Navigation("ProgressHistories");
+                });
+
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.LearnerProfile", b =>
                 {
+                    b.Navigation("CertificateTestResults");
+
+                    b.Navigation("GoalProgressHistories");
+
                     b.Navigation("Goals");
 
                     b.Navigation("LearningPath");
@@ -868,9 +2085,23 @@ namespace CoreLearningSystem.Infrastructure.Migrations
 
                     b.Navigation("QuizAttempts");
 
+                    b.Navigation("RecommendationEffectivenesses");
+
+                    b.Navigation("RecommendationHistories");
+
+                    b.Navigation("Recommendations");
+
+                    b.Navigation("SkillMatrices");
+
+                    b.Navigation("SkillMatrixHistories");
+
                     b.Navigation("SubmittedFeedbacks");
 
                     b.Navigation("UnlockedBadges");
+
+                    b.Navigation("WeaknessHistories");
+
+                    b.Navigation("WeeklyLearningReports");
                 });
 
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.LearningPath", b =>
@@ -883,6 +2114,11 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Navigation("LearningPathItems");
 
                     b.Navigation("ProgressHistory");
+                });
+
+            modelBuilder.Entity("CoreLearningSystem.Domain.Entities.Notification", b =>
+                {
+                    b.Navigation("DeliveryAttempts");
                 });
 
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.Question", b =>
@@ -907,6 +2143,8 @@ namespace CoreLearningSystem.Infrastructure.Migrations
             modelBuilder.Entity("CoreLearningSystem.Domain.Entities.User", b =>
                 {
                     b.Navigation("LearnerProfile");
+
+                    b.Navigation("Sessions");
                 });
 #pragma warning restore 612, 618
         }

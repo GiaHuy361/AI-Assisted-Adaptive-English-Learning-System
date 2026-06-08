@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using CoreLearningSystem.Application.DTOs.Common;
+using CoreLearningSystem.Application.DTOs.Events;
 using CoreLearningSystem.Domain.Entities;
 using CoreLearningSystem.Domain.Enums;
 using CoreLearningSystem.Application.Interfaces;
@@ -299,15 +300,18 @@ public class CompleteLessonCommandHandler : IRequestHandler<CompleteLessonComman
     private readonly IRepository<Lesson> _lessonRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
     private readonly IRepository<LearnerProgress> _progressRepository;
+    private readonly IKafkaPublisher _kafkaPublisher;
 
     public CompleteLessonCommandHandler(
         IRepository<Lesson> lessonRepository,
         IRepository<LearnerProfile> profileRepository,
-        IRepository<LearnerProgress> progressRepository)
+        IRepository<LearnerProgress> progressRepository,
+        IKafkaPublisher kafkaPublisher)
     {
         _lessonRepository = lessonRepository;
         _profileRepository = profileRepository;
         _progressRepository = progressRepository;
+        _kafkaPublisher = kafkaPublisher;
     }
 
     public async Task<ApiResponse<bool>> Handle(CompleteLessonCommand request, CancellationToken cancellationToken)
@@ -350,6 +354,25 @@ public class CompleteLessonCommandHandler : IRequestHandler<CompleteLessonComman
         }
 
         await _progressRepository.SaveChangesAsync();
+
+        // Fire event
+        try
+        {
+            var ev = new LessonCompletedEvent(
+                profile.Id,
+                request.LessonId,
+                lesson.Skill.ToString(),
+                lesson.Topic,
+                lesson.Level.ToString(),
+                DateTime.UtcNow
+            );
+            await _kafkaPublisher.PublishLessonCompletedAsync(ev);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error publishing LessonCompletedEvent: {ex.Message}");
+        }
+
         return ApiResponse<bool>.SuccessResponse(true, "Lesson marked as completed successfully.");
     }
 }

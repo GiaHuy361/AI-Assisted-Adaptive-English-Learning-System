@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using CoreLearningSystem.Application;
+using CoreLearningSystem.Application.Interfaces;
 using CoreLearningSystem.Infrastructure;
 using CoreLearningSystem.API.Middlewares;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,10 @@ builder.Services.AddApplicationServices();
 
 // 2. Register Infrastructure Layer Dependencies (DbContext, Repositories, Mock Publishers)
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+builder.Services.AddHealthChecks()
+    .AddCheck<CoreLearningSystem.API.Health.MySqlHealthCheck>("mysql")
+    .AddCheck<CoreLearningSystem.API.Health.RedisHealthCheck>("redis");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => {
@@ -67,6 +73,31 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.GetValue<string>("Audience") ?? "AdaptiveEnglishLearningCoreUsers",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var validator = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationValidator>();
+            var claimsPrincipal = context.Principal;
+            if (claimsPrincipal == null)
+            {
+                context.Fail("No claims principal.");
+                return;
+            }
+            var jwtIdClaim = claimsPrincipal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti);
+            if (jwtIdClaim == null)
+            {
+                context.Fail("Token does not contain jti claim.");
+                return;
+            }
+            var jwtId = jwtIdClaim.Value;
+            var isRevoked = await validator.IsTokenRevokedAsync(jwtId);
+            if (isRevoked)
+            {
+                context.Fail("Token has been revoked or session has expired/revoked.");
+            }
+        }
+    };
 });
 
 builder.Services.AddCors(options =>
@@ -100,6 +131,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // 6. Seed Database Data
 using (var scope = app.Services.CreateScope())
@@ -108,12 +140,14 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<CoreLearningSystem.Infrastructure.Persistence.AppDbContext>();
+        await context.Database.MigrateAsync();
         await CoreLearningSystem.Infrastructure.Persistence.DataSeeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        throw;
     }
 }
 

@@ -25,8 +25,23 @@ public class AppDbContext : DbContext
     public DbSet<GoalSetting> GoalSettings => Set<GoalSetting>();
     public DbSet<AchievementBadge> AchievementBadges => Set<AchievementBadge>();
     public DbSet<LearnerBadge> LearnerBadges => Set<LearnerBadge>();
+    public DbSet<GoalProgressHistory> GoalProgressHistories => Set<GoalProgressHistory>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
+    public DbSet<FeedbackAnalysis> FeedbackAnalyses => Set<FeedbackAnalysis>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<SkillMatrix> SkillMatrices => Set<SkillMatrix>();
+    public DbSet<SkillMatrixHistory> SkillMatrixHistories => Set<SkillMatrixHistory>();
+    public DbSet<LearnerWeaknessHistory> LearnerWeaknessHistories => Set<LearnerWeaknessHistory>();
+    public DbSet<Recommendation> Recommendations => Set<Recommendation>();
+    public DbSet<RecommendationHistory> RecommendationHistories => Set<RecommendationHistory>();
+    public DbSet<NotificationDeliveryAttempt> NotificationDeliveryAttempts => Set<NotificationDeliveryAttempt>();
+    public DbSet<WeeklyLearningReport> WeeklyLearningReports => Set<WeeklyLearningReport>();
+    public DbSet<BackgroundJobExecution> BackgroundJobExecutions => Set<BackgroundJobExecution>();
+    public DbSet<CertificateTestResult> CertificateTestResults => Set<CertificateTestResult>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<RecommendationEffectiveness> RecommendationEffectivenesses => Set<RecommendationEffectiveness>();
+    public DbSet<RecommendationStatisticSnapshot> RecommendationStatisticSnapshots => Set<RecommendationStatisticSnapshot>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -246,6 +261,13 @@ public class AppDbContext : DbContext
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.Property(e => e.SkillTarget).HasMaxLength(50);
+            entity.Property(e => e.TargetLevel).HasMaxLength(20);
+            entity.Property(e => e.Unit).HasMaxLength(50);
+
             entity.HasOne(e => e.LearnerProfile)
                 .WithMany(lp => lp.Goals)
                 .HasForeignKey(e => e.LearnerProfileId)
@@ -260,12 +282,23 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.ImageUrl).HasMaxLength(300);
             entity.Property(e => e.Criteria).HasMaxLength(500);
+
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.AchievementType)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+            entity.Property(e => e.SkillTarget).HasMaxLength(20);
         });
 
         // 15. LearnerBadge Configuration
         modelBuilder.Entity<LearnerBadge>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasIndex(e => new { e.LearnerProfileId, e.BadgeId }).IsUnique();
 
             entity.HasOne(e => e.LearnerProfile)
                 .WithMany(lp => lp.UnlockedBadges)
@@ -278,6 +311,34 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // GoalProgressHistory Configuration
+        modelBuilder.Entity<GoalProgressHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+
+            entity.Property(e => e.StatusBefore)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.StatusAfter)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.HasOne(e => e.Goal)
+                .WithMany(g => g.ProgressHistories)
+                .HasForeignKey(e => e.GoalId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.GoalProgressHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.GoalId, e.SourceEventId }).IsUnique();
+        });
+
         // 16. Feedback Configuration
         modelBuilder.Entity<Feedback>(entity =>
         {
@@ -286,10 +347,34 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Content).IsRequired().HasColumnType("longtext");
             entity.Property(e => e.ReviewComment).HasMaxLength(1000);
 
+            entity.Property(e => e.TargetType)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
             entity.HasOne(e => e.LearnerProfile)
                 .WithMany(lp => lp.SubmittedFeedbacks)
                 .HasForeignKey(e => e.LearnerProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // FeedbackAnalysis Configuration
+        modelBuilder.Entity<FeedbackAnalysis>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AggregateKey).IsRequired().HasMaxLength(150);
+            entity.HasIndex(e => e.AggregateKey).IsUnique();
+
+            entity.Property(e => e.TargetType)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.Property(e => e.AlertStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20);
         });
 
         // 17. Notification Configuration
@@ -299,10 +384,306 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Message).IsRequired().HasMaxLength(1000);
 
+            entity.Property(e => e.Type)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Channel)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.IdempotencyKey).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.SourceType).HasMaxLength(50);
+            entity.Property(e => e.SourceId).HasMaxLength(50);
+            entity.Property(e => e.SourceEventId).HasMaxLength(100);
+            entity.Property(e => e.LastError).HasMaxLength(1000);
+
+            entity.HasIndex(e => e.IdempotencyKey).IsUnique();
+
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 18. SkillMatrix Configuration
+        modelBuilder.Entity<SkillMatrix>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.SkillMatrices)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.MasteryLevel)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.Skill }).IsUnique();
+        });
+
+        // 19. SkillMatrixHistory Configuration
+        modelBuilder.Entity<SkillMatrixHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.SkillMatrixHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.SourceType)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.DecayPeriodKey).HasMaxLength(50);
+
+            entity.HasIndex(e => e.EventId);
+            entity.HasIndex(e => e.LearnerProfileId);
+            entity.HasIndex(e => new { e.SkillMatrixId, e.DecayPeriodKey }).IsUnique();
+        });
+
+        // 20. LearnerWeaknessHistory Configuration
+        modelBuilder.Entity<LearnerWeaknessHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.WeaknessHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Topic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Level).HasMaxLength(20);
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.Skill, e.Topic }).IsUnique();
+        });
+
+        // 21. Recommendation Configuration
+        modelBuilder.Entity<Recommendation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.Recommendations)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Skill)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Level)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Topic).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.Status });
+            entity.HasIndex(e => new { e.LearnerProfileId, e.LessonId });
+            entity.HasIndex(e => e.SourceEventId);
+            entity.HasIndex(e => e.LessonId);
+        });
+
+        // 22. RecommendationHistory Configuration
+        modelBuilder.Entity<RecommendationHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Recommendation)
+                .WithMany()
+                .HasForeignKey(e => e.RecommendationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.RecommendationHistories)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Action)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.PreviousStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.NewStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.SourceEventId).IsRequired().HasMaxLength(100);
+
+            entity.HasIndex(e => e.SourceEventId);
+            entity.HasIndex(e => e.LearnerProfileId);
+            entity.HasIndex(e => e.LessonId);
+            entity.HasIndex(e => e.RecommendationId);
+            entity.HasIndex(e => e.RecordedAt);
+        });
+
+        // 22. NotificationDeliveryAttempt Configuration
+        modelBuilder.Entity<NotificationDeliveryAttempt>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Channel).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+
+            entity.HasOne(e => e.Notification)
+                .WithMany(n => n.DeliveryAttempts)
+                .HasForeignKey(e => e.NotificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 23. WeeklyLearningReport Configuration
+        modelBuilder.Entity<WeeklyLearningReport>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StrongestSkill).HasMaxLength(50);
+            entity.Property(e => e.WeakestSkill).HasMaxLength(50);
+            entity.Property(e => e.GoalProgressSummary).HasColumnType("longtext");
+            entity.Property(e => e.BadgesEarned).HasColumnType("longtext");
+
+            entity.HasIndex(e => new { e.LearnerProfileId, e.WeekStart }).IsUnique();
+
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.WeeklyLearningReports)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Notification)
+                .WithMany()
+                .HasForeignKey(e => e.NotificationId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // 24. BackgroundJobExecution Configuration
+        modelBuilder.Entity<BackgroundJobExecution>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.JobName).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.ExecutionId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
+            entity.Property(e => e.TriggerType).IsRequired().HasMaxLength(50);
+        });
+
+        // 25. CertificateTestResult Configuration
+        modelBuilder.Entity<CertificateTestResult>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CertificateType)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.CertificateTestResults)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 26. UserSession Configuration
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SessionTokenHash).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.RefreshTokenHash).HasMaxLength(256);
+            entity.Property(e => e.JwtId).HasMaxLength(100);
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Sessions)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.JwtId);
+        });
+
+        // 27. RecommendationEffectiveness Configuration
+        modelBuilder.Entity<RecommendationEffectiveness>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Skill).HasMaxLength(20);
+            entity.Property(e => e.Topic).HasMaxLength(150);
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.RecommendationEffectivenesses)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Recommendation)
+                .WithMany()
+                .HasForeignKey(e => e.RecommendationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // 28. RecommendationStatisticSnapshot Configuration
+        modelBuilder.Entity<RecommendationStatisticSnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Skill).HasMaxLength(20);
+            entity.Property(e => e.Topic).HasMaxLength(150);
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // 29. OutboxMessage Configuration
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EventId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AggregateType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AggregateId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EventType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Topic).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Payload).IsRequired().HasColumnType("longtext");
+            entity.Property(e => e.HeadersJson).HasColumnType("longtext");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.Property(e => e.LastError).HasMaxLength(2000);
+            entity.HasIndex(e => e.EventId).IsUnique();
         });
     }
 }

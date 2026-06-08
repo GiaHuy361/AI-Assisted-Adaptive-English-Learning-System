@@ -18,4 +18,5 @@ public class User
 
     // Navigation Properties
     public LearnerProfile? LearnerProfile { get; set; }
+    public ICollection<UserSession> Sessions { get; set; } = new List<UserSession>();
 }

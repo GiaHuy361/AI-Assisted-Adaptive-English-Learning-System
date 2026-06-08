@@ -23,4 +23,13 @@ public class LearnerProfile
     public ICollection<GoalSetting> Goals { get; set; } = new List<GoalSetting>();
     public ICollection<LearnerBadge> UnlockedBadges { get; set; } = new List<LearnerBadge>();
     public ICollection<Feedback> SubmittedFeedbacks { get; set; } = new List<Feedback>();
+    public ICollection<SkillMatrix> SkillMatrices { get; set; } = new List<SkillMatrix>();
+    public ICollection<SkillMatrixHistory> SkillMatrixHistories { get; set; } = new List<SkillMatrixHistory>();
+    public ICollection<LearnerWeaknessHistory> WeaknessHistories { get; set; } = new List<LearnerWeaknessHistory>();
+    public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
+    public ICollection<RecommendationHistory> RecommendationHistories { get; set; } = new List<RecommendationHistory>();
+    public ICollection<GoalProgressHistory> GoalProgressHistories { get; set; } = new List<GoalProgressHistory>();
+    public ICollection<WeeklyLearningReport> WeeklyLearningReports { get; set; } = new List<WeeklyLearningReport>();
+    public ICollection<CertificateTestResult> CertificateTestResults { get; set; } = new List<CertificateTestResult>();
+    public ICollection<RecommendationEffectiveness> RecommendationEffectivenesses { get; set; } = new List<RecommendationEffectiveness>();
 }

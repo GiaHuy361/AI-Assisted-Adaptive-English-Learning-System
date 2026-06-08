@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using CoreLearningSystem.Application.DTOs.Common;
+using CoreLearningSystem.Application.DTOs.Events;
 using CoreLearningSystem.Domain.Entities;
 using CoreLearningSystem.Application.Interfaces;
 
@@ -31,13 +32,16 @@ public class SubmitFeedbackCommandHandler : IRequestHandler<SubmitFeedbackComman
 {
     private readonly IRepository<Domain.Entities.Feedback> _feedbackRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
+    private readonly IKafkaPublisher _kafkaPublisher;
 
     public SubmitFeedbackCommandHandler(
         IRepository<Domain.Entities.Feedback> feedbackRepository,
-        IRepository<LearnerProfile> profileRepository)
+        IRepository<LearnerProfile> profileRepository,
+        IKafkaPublisher kafkaPublisher)
     {
         _feedbackRepository = feedbackRepository;
         _profileRepository = profileRepository;
+        _kafkaPublisher = kafkaPublisher;
     }
 
     public async Task<ApiResponse<FeedbackDto>> Handle(SubmitFeedbackCommand request, CancellationToken cancellationToken)
@@ -57,6 +61,24 @@ public class SubmitFeedbackCommandHandler : IRequestHandler<SubmitFeedbackComman
 
         await _feedbackRepository.AddAsync(fb);
         await _feedbackRepository.SaveChangesAsync();
+
+        // Fire event (Partial/Blocked for TargetType/TargetId due to database schema limitations)
+        try
+        {
+            var ev = new FeedbackSubmittedEvent(
+                profile.Id,
+                string.Empty, // Blocked target type
+                null,         // Blocked target ID
+                fb.Rating,
+                fb.Content,
+                DateTime.UtcNow
+            );
+            await _kafkaPublisher.PublishFeedbackSubmittedAsync(ev);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error publishing FeedbackSubmittedEvent: {ex.Message}");
+        }
 
         var dto = new FeedbackDto(
             fb.Id, 

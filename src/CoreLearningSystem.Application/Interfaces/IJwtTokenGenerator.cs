@@ -1,6 +1,10 @@
+using System;
+
 namespace CoreLearningSystem.Application.Interfaces;
+
+public record TokenGenerationResult(string Token, string JwtId, DateTime ExpiresAt);
 
 public interface IJwtTokenGenerator
 {
-    string GenerateToken(int userId, string username, string role);
+    TokenGenerationResult GenerateToken(int userId, string username, string role);
 }
