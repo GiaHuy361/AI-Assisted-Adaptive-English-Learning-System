@@ -7,6 +7,8 @@ using CoreLearningSystem.Application.Interfaces;
 using CoreLearningSystem.Infrastructure;
 using CoreLearningSystem.API.Middlewares;
 using Microsoft.EntityFrameworkCore;
+using Hangfire;
+using Hangfire.Dashboard;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -129,9 +131,16 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new AllowAllHangfireAuthorizationFilter() }
+});
 
 app.MapControllers();
 app.MapHealthChecks("/health");
+
+// Root redirect → Swagger (click localhost:5292 trên Docker Desktop nhảy thẳng vào Swagger)
+app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 // 6. Seed Database Data
 using (var scope = app.Services.CreateScope())
@@ -152,3 +161,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+public class AllowAllHangfireAuthorizationFilter : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context) => true;
+}

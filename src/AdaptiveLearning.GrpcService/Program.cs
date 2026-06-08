@@ -15,9 +15,19 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.MapGrpcService<RecommendationGrpcService>();
 
-// Expose a basic health-friendly root response
-app.MapGet("/", () => new { Status = "ONLINE", Service = "AdaptiveLearning.GrpcService", Version = "1.0.0-skeleton" });
-app.MapGet("/health", () => new { Status = "Healthy" });
+// Root: click localhost:50080 trên Docker Desktop → thấy info + link health
+app.MapGet("/", () => Results.Json(new
+{
+    service  = "AdaptiveLearning.GrpcService",
+    status   = "ONLINE",
+    version  = "1.0.0",
+    endpoints = new
+    {
+        health           = "http://localhost:50080/health",
+        grpc_cleartext   = "grpc://localhost:50051"
+    }
+}));
+app.MapGet("/health", () => Results.Json(new { status = "Healthy", service = "AdaptiveLearning.GrpcService" }));
 
 app.Run();
 

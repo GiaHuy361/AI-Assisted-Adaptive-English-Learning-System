@@ -10,8 +10,8 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-AdaptiveEnglishLearningDb}
       MYSQL_USER: ${MYSQL_USER:-adaptive_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change_this_password_in_prod}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_this_root_password_in_prod}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-12345}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-12345}
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
@@ -99,7 +99,7 @@ services:
     ports:
       - "5292:8080"
     environment:
-      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-AdaptiveEnglishLearningDb};Uid=${MYSQL_USER:-adaptive_user};Pwd=${MYSQL_PASSWORD:-change_this_password_in_prod};"
+      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-AdaptiveEnglishLearningDb};Uid=${MYSQL_USER:-adaptive_user};Pwd=${MYSQL_PASSWORD:-12345};"
       Kafka__BootstrapServers: "kafka:29092"
       Redis__ConnectionString: "redis:6379"
       RecommendationGrpc__ServiceUrl: "http://grpc-service:50051"
@@ -126,7 +126,7 @@ services:
     container_name: adaptive-learning-worker
     restart: always
     environment:
-      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-AdaptiveEnglishLearningDb};Uid=${MYSQL_USER:-adaptive_user};Pwd=${MYSQL_PASSWORD:-change_this_password_in_prod};Allow User Variables=True;"
+      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-AdaptiveEnglishLearningDb};Uid=${MYSQL_USER:-adaptive_user};Pwd=${MYSQL_PASSWORD:-12345};Allow User Variables=True;"
       Kafka__BootstrapServers: "kafka:29092"
       Redis__ConnectionString: "redis:6379"
       RecommendationGrpc__ServiceUrl: "http://grpc-service:50051"
@@ -154,6 +154,7 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: adaptive-learning-kafka-ui
+    restart: unless-stopped
     ports:
       - "8085:8080"
     environment:
@@ -165,12 +166,11 @@ services:
         condition: service_healthy
     networks:
       - adaptive-network
-    profiles:
-      - dev-tools
 
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: adaptive-learning-redis-commander
+    restart: unless-stopped
     ports:
       - "8086:8081"
     environment:
@@ -180,8 +180,6 @@ services:
         condition: service_healthy
     networks:
       - adaptive-network
-    profiles:
-      - dev-tools
 
 volumes:
   mysql-data:

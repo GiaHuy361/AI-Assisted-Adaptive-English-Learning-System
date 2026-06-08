@@ -14,5 +14,4 @@ public record NotificationCreatedEvent : BaseEvent
     public string? SourceType { get; init; }
     public string? SourceId { get; init; }
     public DateTime CreatedAt { get; init; }
-    public int Version { get; init; } = 1;
 }
