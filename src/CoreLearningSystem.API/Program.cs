@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using CoreLearningSystem.Application;
 using CoreLearningSystem.Infrastructure;
 using CoreLearningSystem.API.Middlewares;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,10 @@ builder.Services.AddApplicationServices();
 
 // 2. Register Infrastructure Layer Dependencies (DbContext, Repositories, Mock Publishers)
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+builder.Services.AddHealthChecks()
+    .AddCheck<CoreLearningSystem.API.Health.MySqlHealthCheck>("mysql")
+    .AddCheck<CoreLearningSystem.API.Health.RedisHealthCheck>("redis");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => {
@@ -100,6 +105,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // 6. Seed Database Data
 using (var scope = app.Services.CreateScope())
@@ -108,12 +114,14 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<CoreLearningSystem.Infrastructure.Persistence.AppDbContext>();
+        await context.Database.MigrateAsync();
         await CoreLearningSystem.Infrastructure.Persistence.DataSeeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        throw;
     }
 }
 

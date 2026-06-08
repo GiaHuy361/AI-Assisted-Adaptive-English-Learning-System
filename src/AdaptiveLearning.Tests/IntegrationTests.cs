@@ -59,6 +59,11 @@ public class IntegrationTests
         // Verify Kafka is reachable before running tests (prevents test hang)
         if (!await IsKafkaAvailableAsync())
         {
+            var requireInfra = Environment.GetEnvironmentVariable("REQUIRE_INFRASTRUCTURE_TESTS") == "true";
+            if (requireInfra)
+            {
+                Assert.Fail("Kafka is required but not available on localhost:9092");
+            }
             Console.WriteLine("Kafka broker is not available at localhost:9092. Skipping E2E Integration tests.");
             return;
         }
@@ -109,7 +114,7 @@ public class IntegrationTests
         await host.StartAsync(cts.Token);
 
         // Wait for consumer to join group and prepare partition assignments
-        await Task.Delay(4000);
+        await Task.Delay(8000);
 
         // Helper Producer to push messages in tests
         var producerConfig = new ProducerConfig { BootstrapServers = BootstrapServers };
@@ -136,7 +141,7 @@ public class IntegrationTests
             await SendTestMessageAsync(testProducer, TopicNames.QuizSubmitted, eventId, correlationId, "QuizSubmittedEvent", quizEvent);
 
             // Wait for processing
-            await Task.Delay(2000);
+            await Task.Delay(3000);
             Assert.Equal(1, TestQuizSubmittedEventHandler.HandleCallCount);
 
             // --- SCENARIO 2: Duplicate Event Detection ---

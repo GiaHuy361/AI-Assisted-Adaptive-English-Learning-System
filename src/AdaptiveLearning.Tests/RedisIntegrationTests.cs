@@ -79,7 +79,19 @@ public class RedisIntegrationTests : IAsyncLifetime
         catch { /* cleanup best-effort */ }
     }
 
-
+    private bool CheckRedisOrSkip()
+    {
+        var requireInfra = Environment.GetEnvironmentVariable("REQUIRE_INFRASTRUCTURE_TESTS") == "true";
+        if (!_redisAvailable)
+        {
+            if (requireInfra)
+            {
+                Assert.Fail("Redis is required but not available on localhost:6379");
+            }
+            return true;
+        }
+        return false;
+    }
 
     // ── Record for test serialization ──────────────────────────────────────
     private record TestDto(int Id, string Name, double Value);
@@ -88,7 +100,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_SetAndGet_DTO_ReturnsCorrectValue()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var key = "adaptive:v1:test:dto:1";
         var dto = new TestDto(42, "Grammar B1", 3.14);
 
@@ -105,7 +117,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_Exists_ReturnsTrueAfterSet_FalseAfterRemove()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var key = "adaptive:v1:test:dto:2";
 
         await _cache!.SetAsync(key, new TestDto(1, "x", 0), TimeSpan.FromMinutes(5));
@@ -119,7 +131,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_TTL_KeyExpiresAfterTtl()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var key = "adaptive:v1:test:dto:3";
 
         await _cache!.SetAsync(key, new TestDto(99, "ttl-test", 1.0), TimeSpan.FromSeconds(2));
@@ -134,7 +146,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_Get_MissingKey_ReturnsNull()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var result = await _cache!.GetAsync<TestDto>("adaptive:v1:test:nonexistent:99999");
         Assert.Null(result);
     }
@@ -143,7 +155,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_TrackedSet_InvalidatesAllMembers()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var setKey = "adaptive:v1:test:set";
         var k1 = "adaptive:v1:lessons:list:v1:grammar:b1:admin";
         var k2 = "adaptive:v1:lessons:list:v1:all:all:admin";
@@ -169,7 +181,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_VersionIncrement_IncreasesMonotonically()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var key = "adaptive:v1:test:version";
         await _db!.KeyDeleteAsync(key); // ensure clean
 
@@ -185,7 +197,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_SetNX_OnlyOneOwnerWins_Concurrent()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var lockKey = "adaptive:v1:test:idempotency:processing:evt-1";
         await _db!.KeyDeleteAsync(lockKey);
 
@@ -213,7 +225,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task RedisProcessedEventStore_OwnerTokenStateMachine_Works()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var store = new RedisProcessedEventStore(
             _mux!, _keys, NullLogger<RedisProcessedEventStore>.Instance);
 
@@ -260,7 +272,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task RedisProcessedEventStore_WrongOwnerRelease_DoesNotReleaseLock()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var store = new RedisProcessedEventStore(
             _mux!, _keys, NullLogger<RedisProcessedEventStore>.Instance);
 
@@ -340,7 +352,7 @@ public class RedisIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Redis_LessonListVersionCache_WorksEndToEnd()
     {
-        if (!_redisAvailable) return;
+        if (CheckRedisOrSkip()) return;
         var versionKey = _keys.LessonListVersion();
 
         // Start clean

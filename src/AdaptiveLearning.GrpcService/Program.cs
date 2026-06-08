@@ -15,6 +15,7 @@ app.MapGrpcService<RecommendationGrpcService>();
 
 // Expose a basic health-friendly root response
 app.MapGet("/", () => new { Status = "ONLINE", Service = "AdaptiveLearning.GrpcService", Version = "1.0.0-skeleton" });
+app.MapGet("/health", () => new { Status = "Healthy" });
 
 app.Run();
 

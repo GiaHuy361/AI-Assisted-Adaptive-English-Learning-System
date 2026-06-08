@@ -1,0 +1,15 @@
+.git
+.github
+.vs
+**/bin
+**/obj
+**/TestResults
+**/*.user
+.env
+logs
+Redis/MySQL data
+mysql-data
+redis-data
+kafka-data
+docker-compose.override.yml
+*.db

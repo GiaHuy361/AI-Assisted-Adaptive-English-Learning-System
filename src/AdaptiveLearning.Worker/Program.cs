@@ -66,6 +66,7 @@ public class Program
 
         // Register Consumer Background Service
         builder.Services.AddHostedService<KafkaConsumerHostedService>();
+        builder.Services.AddHostedService<WorkerHealthService>();
 
         var host = builder.Build();
 
