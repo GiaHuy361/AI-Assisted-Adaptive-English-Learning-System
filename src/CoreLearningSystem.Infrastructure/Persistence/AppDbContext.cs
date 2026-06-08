@@ -37,6 +37,11 @@ public class AppDbContext : DbContext
     public DbSet<NotificationDeliveryAttempt> NotificationDeliveryAttempts => Set<NotificationDeliveryAttempt>();
     public DbSet<WeeklyLearningReport> WeeklyLearningReports => Set<WeeklyLearningReport>();
     public DbSet<BackgroundJobExecution> BackgroundJobExecutions => Set<BackgroundJobExecution>();
+    public DbSet<CertificateTestResult> CertificateTestResults => Set<CertificateTestResult>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<RecommendationEffectiveness> RecommendationEffectivenesses => Set<RecommendationEffectiveness>();
+    public DbSet<RecommendationStatisticSnapshot> RecommendationStatisticSnapshots => Set<RecommendationStatisticSnapshot>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -599,6 +604,86 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
             entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
             entity.Property(e => e.TriggerType).IsRequired().HasMaxLength(50);
+        });
+
+        // 25. CertificateTestResult Configuration
+        modelBuilder.Entity<CertificateTestResult>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CertificateType)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.CertificateTestResults)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 26. UserSession Configuration
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SessionTokenHash).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.RefreshTokenHash).HasMaxLength(256);
+            entity.Property(e => e.JwtId).HasMaxLength(100);
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Sessions)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.JwtId);
+        });
+
+        // 27. RecommendationEffectiveness Configuration
+        modelBuilder.Entity<RecommendationEffectiveness>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Skill).HasMaxLength(20);
+            entity.Property(e => e.Topic).HasMaxLength(150);
+            entity.HasOne(e => e.LearnerProfile)
+                .WithMany(lp => lp.RecommendationEffectivenesses)
+                .HasForeignKey(e => e.LearnerProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Recommendation)
+                .WithMany()
+                .HasForeignKey(e => e.RecommendationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // 28. RecommendationStatisticSnapshot Configuration
+        modelBuilder.Entity<RecommendationStatisticSnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Skill).HasMaxLength(20);
+            entity.Property(e => e.Topic).HasMaxLength(150);
+            entity.HasOne(e => e.Lesson)
+                .WithMany()
+                .HasForeignKey(e => e.LessonId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // 29. OutboxMessage Configuration
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EventId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AggregateType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AggregateId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.EventType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Topic).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Payload).IsRequired().HasColumnType("longtext");
+            entity.Property(e => e.HeadersJson).HasColumnType("longtext");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.Property(e => e.LastError).HasMaxLength(2000);
+            entity.HasIndex(e => e.EventId).IsUnique();
         });
     }
 }

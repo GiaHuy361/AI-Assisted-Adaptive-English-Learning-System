@@ -298,7 +298,13 @@ public class BackgroundJobTests : IDisposable
             "goal-status-tracking",
             "achievement-checking",
             "skill-decay",
-            "cleanup"
+            "cleanup",
+            "skill-matrix-recalculation",
+            "session-cleanup",
+            "recommendation-effectiveness",
+            "recommendation-regeneration",
+            "recommendation-statistics",
+            "outbox-publisher"
         };
 
         Assert.Equal(expectedJobIds.Length, fakeJobManager.AddedOrUpdatedJobIds.Count);

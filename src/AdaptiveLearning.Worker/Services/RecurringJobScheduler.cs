@@ -90,5 +90,83 @@ public static class RecurringJobScheduler
         {
             jobManager.RemoveIfExists("cleanup");
         }
+
+        // 7. Skill Matrix Recalculation
+        if (options.EnableSkillMatrixRecalculation)
+        {
+            jobManager.AddOrUpdate<SkillMatrixRecalculationJob>(
+                "skill-matrix-recalculation",
+                job => job.RunAsync(CancellationToken.None),
+                options.SkillMatrixRecalculationCron);
+        }
+        else
+        {
+            jobManager.RemoveIfExists("skill-matrix-recalculation");
+        }
+
+        // 8. Session Cleanup
+        if (options.EnableSessionCleanup)
+        {
+            jobManager.AddOrUpdate<UserSessionCleanupJob>(
+                "session-cleanup",
+                job => job.RunAsync(CancellationToken.None),
+                options.SessionCleanupCron);
+        }
+        else
+        {
+            jobManager.RemoveIfExists("session-cleanup");
+        }
+
+        // 9. Recommendation Effectiveness
+        if (options.EnableRecommendationEffectiveness)
+        {
+            jobManager.AddOrUpdate<RecommendationEffectivenessJob>(
+                "recommendation-effectiveness",
+                job => job.RunAsync(CancellationToken.None),
+                options.RecommendationEffectivenessCron);
+        }
+        else
+        {
+            jobManager.RemoveIfExists("recommendation-effectiveness");
+        }
+
+        // 10. Recommendation Regeneration
+        if (options.EnableRecommendationRegeneration)
+        {
+            jobManager.AddOrUpdate<RecommendationRegenerationJob>(
+                "recommendation-regeneration",
+                job => job.RunAsync(CancellationToken.None),
+                options.RecommendationRegenerationCron);
+        }
+        else
+        {
+            jobManager.RemoveIfExists("recommendation-regeneration");
+        }
+
+        // 11. Recommendation Statistics
+        if (options.EnableRecommendationStatistics)
+        {
+            jobManager.AddOrUpdate<RecommendationStatisticsJob>(
+                "recommendation-statistics",
+                job => job.RunAsync(CancellationToken.None),
+                options.RecommendationStatisticsCron);
+        }
+        else
+        {
+            jobManager.RemoveIfExists("recommendation-statistics");
+        }
+
+        // 12. Outbox Publisher
+        if (options.EnableOutboxPublisher)
+        {
+            jobManager.AddOrUpdate<OutboxPublisherJob>(
+                "outbox-publisher",
+                job => job.RunAsync(CancellationToken.None),
+                options.OutboxPublisherCron);
+        }
+        else
+        {
+            jobManager.RemoveIfExists("outbox-publisher");
+        }
     }
 }

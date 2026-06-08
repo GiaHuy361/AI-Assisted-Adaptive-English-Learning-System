@@ -18,6 +18,7 @@ using AdaptiveLearning.GrpcService;
 using AdaptiveLearning.GrpcService.Services;
 using AdaptiveLearning.Worker.Options;
 using AdaptiveLearning.Worker.Services;
+using CoreLearningSystem.Application.Interfaces;
 
 namespace AdaptiveLearning.Tests;
 
@@ -70,6 +71,7 @@ public class GrpcServiceTests
         var builder = WebApplication.CreateBuilder(Array.Empty<string>());
         builder.Services.AddGrpc();
         builder.Services.AddSingleton<IQuizWeaknessAnalyzer, QuizWeaknessAnalyzer>();
+        builder.Services.AddSingleton<IRecommendationService>(new Moq.Mock<IRecommendationService>().Object);
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(IPAddress.Loopback, 0, listenOptions =>
@@ -110,6 +112,7 @@ public class GrpcServiceTests
         var builder = WebApplication.CreateBuilder(Array.Empty<string>());
         builder.Services.AddGrpc();
         builder.Services.AddSingleton<IQuizWeaknessAnalyzer, QuizWeaknessAnalyzer>();
+        builder.Services.AddSingleton<IRecommendationService>(new Moq.Mock<IRecommendationService>().Object);
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(IPAddress.Loopback, 0, listenOptions =>
@@ -178,6 +181,7 @@ public class GrpcServiceTests
         var builder = WebApplication.CreateBuilder(Array.Empty<string>());
         builder.Services.AddGrpc();
         builder.Services.AddSingleton<IQuizWeaknessAnalyzer, QuizWeaknessAnalyzer>();
+        builder.Services.AddSingleton<IRecommendationService>(new Moq.Mock<IRecommendationService>().Object);
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Listen(IPAddress.Loopback, 0, listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; });

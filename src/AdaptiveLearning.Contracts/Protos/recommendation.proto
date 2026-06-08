@@ -6,6 +6,7 @@ package recommendation;
 
 service RecommendationService {
   rpc AnalyzeQuizSubmission (AnalyzeQuizSubmissionRequest) returns (AnalyzeQuizSubmissionResponse);
+  rpc GenerateRecommendations (GenerateRecommendationsRequest) returns (GenerateRecommendationsResponse);
   rpc GetServiceStatus (StatusRequest) returns (StatusResponse);
 }
 
@@ -48,6 +49,35 @@ message SkillScore {
   int32 total_questions = 3;
   int32 correct_answers = 4;
   int32 incorrect_answers = 5;
+}
+
+message GenerateRecommendationsRequest {
+  string event_id = 1;
+  string correlation_id = 2;
+  int32 user_id = 3;
+  int32 learner_profile_id = 4;
+  string weakest_skill = 5;
+  repeated string weak_topics = 6;
+  string current_level = 7;
+  int32 max_recommendations = 8;
+}
+
+message GenerateRecommendationsResponse {
+  bool success = 1;
+  string generated_at = 2;
+  repeated RecommendedLesson recommendations = 3;
+  string overall_reason = 4;
+  string message = 5;
+}
+
+message RecommendedLesson {
+  int32 lesson_id = 1;
+  string title = 2;
+  string skill = 3;
+  string topic = 4;
+  string level = 5;
+  double priority_score = 6;
+  string reason = 7;
 }
 
 message StatusRequest {}

@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AdaptiveLearning.Contracts\AdaptiveLearning.Contracts.csproj" />
+    <ProjectReference Include="..\CoreLearningSystem.Application\CoreLearningSystem.Application.csproj" />
+    <ProjectReference Include="..\CoreLearningSystem.Infrastructure\CoreLearningSystem.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

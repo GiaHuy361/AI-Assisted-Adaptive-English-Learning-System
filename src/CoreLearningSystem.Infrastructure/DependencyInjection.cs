@@ -43,11 +43,13 @@ public static class DependencyInjection
         services.AddScoped<IKafkaPublisher, KafkaPublisher>();
         services.AddScoped<ISkillMatrixService, SkillMatrixService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<ITokenRevocationValidator, TokenRevocationValidator>();
 
         // Register Recommendation Engine and Service
         services.Configure<CoreLearningSystem.Application.Options.RecommendationOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.RecommendationOptions.Position));
         services.AddScoped<IAdaptiveRecommendationEngine, AdaptiveRecommendationEngine>();
         services.AddScoped<IRecommendationService, RecommendationService>();
+        services.AddScoped<ICertificateService, CertificateService>();
 
         // Register Goal Tracking and Achievement Engine
         services.Configure<CoreLearningSystem.Application.Options.AchievementOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.AchievementOptions.Position));
@@ -64,6 +66,8 @@ public static class DependencyInjection
         services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.Position));
         services.Configure<FeedbackAnalysisOptions>(configuration.GetSection(FeedbackAnalysisOptions.Position));
         services.Configure<FeedbackRecommendationOptions>(configuration.GetSection(FeedbackRecommendationOptions.Position));
+        services.Configure<SkillMatrixRecalculationOptions>(configuration.GetSection(SkillMatrixRecalculationOptions.Position));
+        services.Configure<RecommendationEffectivenessOptions>(configuration.GetSection(RecommendationEffectivenessOptions.Position));
 
         // Phase 8: Redis connection (Singleton — one multiplexer for the lifetime)
         services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -86,6 +90,7 @@ public static class DependencyInjection
 
         // Phase 8: Feedback Analysis
         services.AddScoped<IFeedbackAnalysisService, FeedbackAnalysisService>();
+        services.AddScoped<IRecommendationAnalyticsService, RecommendationAnalyticsService>();
 
         // Services
         services.AddScoped<INotificationService, NotificationService>();
@@ -99,6 +104,12 @@ public static class DependencyInjection
         services.AddScoped<AchievementCheckingJob>();
         services.AddScoped<SkillDecayJob>();
         services.AddScoped<CleanupJob>();
+        services.AddScoped<SkillMatrixRecalculationJob>();
+        services.AddScoped<UserSessionCleanupJob>();
+        services.AddScoped<RecommendationEffectivenessJob>();
+        services.AddScoped<RecommendationRegenerationJob>();
+        services.AddScoped<RecommendationStatisticsJob>();
+        services.AddScoped<OutboxPublisherJob>();
 
         // Hangfire client/storage configuration with Allow User Variables=True
         var hangfireConnStr = connectionString;
@@ -126,6 +137,59 @@ public static class DependencyInjection
                     TablesPrefix = "Hangfire"
                 }
             )));
+
+        return services;
+    }
+
+    public static IServiceCollection AddRecommendationReadServicesForGrpc(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseMySql(
+                connectionString, 
+                new MySqlServerVersion(new Version(8, 0, 30))
+            ));
+
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        
+        // Register Recommendation Engine and Service
+        services.Configure<CoreLearningSystem.Application.Options.RecommendationOptions>(configuration.GetSection(CoreLearningSystem.Application.Options.RecommendationOptions.Position));
+        services.AddScoped<IAdaptiveRecommendationEngine, AdaptiveRecommendationEngine>();
+        services.AddScoped<IRecommendationService, RecommendationService>();
+
+        // Dependencies of RecommendationService
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IKafkaPublisher, MockKafkaPublisher>();
+        services.AddScoped<IGoalTrackingService, GoalTrackingService>();
+        services.AddScoped<ITokenRevocationValidator, TokenRevocationValidator>();
+        services.AddScoped<ICertificateService, CertificateService>();
+        services.AddScoped<IRecommendationAnalyticsService, RecommendationAnalyticsService>();
+
+        // Register Options
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Position));
+        services.Configure<JobScheduleOptions>(configuration.GetSection(JobScheduleOptions.Position));
+        services.Configure<CleanupOptions>(configuration.GetSection(CleanupOptions.Position));
+        services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.Position));
+        services.Configure<FeedbackAnalysisOptions>(configuration.GetSection(FeedbackAnalysisOptions.Position));
+        services.Configure<FeedbackRecommendationOptions>(configuration.GetSection(FeedbackRecommendationOptions.Position));
+        services.Configure<SkillMatrixRecalculationOptions>(configuration.GetSection(SkillMatrixRecalculationOptions.Position));
+        services.Configure<RecommendationEffectivenessOptions>(configuration.GetSection(RecommendationEffectivenessOptions.Position));
+
+        // Graceful Redis connection
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var redisSection = configuration.GetSection(RedisOptions.Position);
+            var connStr = redisSection["ConnectionString"] ?? "localhost:6379";
+            var configOpts = ConfigurationOptions.Parse(connStr);
+            configOpts.AbortOnConnectFail = false;
+            configOpts.ConnectRetry = 3;
+            configOpts.ConnectTimeout = 3000;
+            return ConnectionMultiplexer.Connect(configOpts);
+        });
+
+        services.AddSingleton<ICacheKeyBuilder, CacheKeyBuilder>();
+        services.AddSingleton<ICacheService, RedisCacheService>();
 
         return services;
     }

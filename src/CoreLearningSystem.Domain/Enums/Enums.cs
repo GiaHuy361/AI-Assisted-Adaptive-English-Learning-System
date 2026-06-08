@@ -106,7 +106,8 @@ public enum MatrixSourceType
     Quiz,
     LessonCompletion,
     ManualAdjustment,
-    SkillDecay
+    SkillDecay,
+    PeriodicRecalculation
 }
 
 public enum WeaknessStatus
@@ -198,6 +199,27 @@ public enum FeedbackAlertStatus
     Warning,
     Critical,
     Resolved
+}
+
+public enum CertificateType
+{
+    TOEIC,
+    IELTS,
+    VSTEP
+}
+
+public enum SessionStatus
+{
+    Active,
+    Expired,
+    Revoked
+}
+
+public enum OutboxStatus
+{
+    Pending,
+    Published,
+    Failed
 }
 
 

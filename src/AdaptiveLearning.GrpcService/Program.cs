@@ -1,4 +1,5 @@
 using AdaptiveLearning.GrpcService.Services;
+using CoreLearningSystem.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddScoped<IQuizWeaknessAnalyzer, QuizWeaknessAnalyzer>();
+builder.Services.AddRecommendationReadServicesForGrpc(builder.Configuration);
 
 var app = builder.Build();
 

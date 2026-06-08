@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using CoreLearningSystem.Application.Interfaces;
 using CoreLearningSystem.Infrastructure.Persistence;
+using CoreLearningSystem.Domain.Entities;
+using CoreLearningSystem.Domain.Enums;
 using BackendEvents = CoreLearningSystem.Application.DTOs.Events;
 using ContractEvents = AdaptiveLearning.Contracts.Events;
 using ContractTopics = AdaptiveLearning.Contracts.Topics;
@@ -33,7 +35,7 @@ public class KafkaPublisher : IKafkaPublisher
 
     public async Task PublishQuizSubmittedAsync(BackendEvents.QuizSubmittedEvent ev)
     {
-        _logger.LogInformation("Publishing QuizSubmittedEvent for AttemptId: {AttemptId}", ev.AttemptId);
+        _logger.LogInformation("Outbox: Enqueueing QuizSubmittedEvent for AttemptId: {AttemptId}", ev.AttemptId);
 
         try
         {
@@ -77,18 +79,18 @@ public class KafkaPublisher : IKafkaPublisher
                 AnswerDetails = answerDetails
             };
 
-            await SendMessageAsync(ContractTopics.TopicNames.QuizSubmitted, ev.AttemptId.ToString(), contractEvent);
+            await EnqueueOutboxAsync(ContractTopics.TopicNames.QuizSubmitted, ev.AttemptId.ToString(), contractEvent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish QuizSubmittedEvent for AttemptId: {AttemptId}", ev.AttemptId);
+            _logger.LogError(ex, "Failed to enqueue QuizSubmittedEvent for AttemptId: {AttemptId}", ev.AttemptId);
             throw;
         }
     }
 
     public async Task PublishPlacementTestCompletedAsync(BackendEvents.PlacementTestCompletedEvent ev)
     {
-        _logger.LogInformation("Publishing PlacementTestCompletedEvent for ResultId: {ResultId}", ev.TestResultId);
+        _logger.LogInformation("Outbox: Enqueueing PlacementTestCompletedEvent for ResultId: {ResultId}", ev.TestResultId);
 
         try
         {
@@ -124,31 +126,55 @@ public class KafkaPublisher : IKafkaPublisher
             var contractEvent = new ContractEvents.PlacementTestCompletedEvent
             {
                 UserId = userId,
-                PlacementTestId = placementQuiz?.Id ?? 0, // Blocked/Partial if quiz not found
+                PlacementTestId = placementQuiz?.Id ?? 0,
                 Score = ev.Score,
                 AssignedLevel = ev.RecommendedLevel.ToString(),
                 SkillResults = skillResults,
                 CompletedAt = DateTimeOffset.UtcNow
             };
 
-            await SendMessageAsync(ContractTopics.TopicNames.PlacementTestCompleted, ev.TestResultId.ToString(), contractEvent);
+            await EnqueueOutboxAsync(ContractTopics.TopicNames.PlacementTestCompleted, ev.TestResultId.ToString(), contractEvent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish PlacementTestCompletedEvent for ResultId: {ResultId}", ev.TestResultId);
+            _logger.LogError(ex, "Failed to enqueue PlacementTestCompletedEvent for ResultId: {ResultId}", ev.TestResultId);
             throw;
         }
     }
 
-    public Task PublishGoalCompletedAsync(BackendEvents.GoalCompletedEvent ev)
+    public async Task PublishGoalCompletedAsync(BackendEvents.GoalCompletedEvent ev)
     {
-        _logger.LogWarning("PublishGoalCompletedEvent is not actively mapped in Phase 2 scope.");
-        return Task.CompletedTask;
+        _logger.LogInformation("Outbox: Enqueueing GoalCompletedEvent for GoalId: {GoalId}", ev.GoalId);
+        try
+        {
+            var profile = await _dbContext.LearnerProfiles.FindAsync(ev.LearnerProfileId);
+            var userId = profile?.UserId ?? ev.LearnerProfileId;
+            var goal = await _dbContext.GoalSettings.FindAsync(ev.GoalId);
+
+            var contractEvent = new ContractEvents.GoalCompletedEvent
+            {
+                UserId = userId,
+                LearnerProfileId = ev.LearnerProfileId,
+                GoalId = ev.GoalId,
+                GoalType = goal?.Type.ToString() ?? "General",
+                Title = goal?.Target ?? ev.Target,
+                TargetValue = goal?.TargetValue ?? 1.0,
+                AchievedValue = goal?.CurrentValue ?? 1.0,
+                CompletedAt = DateTimeOffset.UtcNow
+            };
+
+            await EnqueueOutboxAsync(ContractTopics.TopicNames.GoalCompleted, ev.GoalId.ToString(), contractEvent);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to enqueue GoalCompletedEvent for GoalId: {GoalId}", ev.GoalId);
+            throw;
+        }
     }
 
     public async Task PublishLessonCompletedAsync(BackendEvents.LessonCompletedEvent ev)
     {
-        _logger.LogInformation("Publishing LessonCompletedEvent for LessonId: {LessonId}", ev.LessonId);
+        _logger.LogInformation("Outbox: Enqueueing LessonCompletedEvent for LessonId: {LessonId}", ev.LessonId);
 
         try
         {
@@ -165,18 +191,18 @@ public class KafkaPublisher : IKafkaPublisher
                 CompletedAt = DateTimeOffset.UtcNow
             };
 
-            await SendMessageAsync(ContractTopics.TopicNames.LessonCompleted, ev.LessonId.ToString(), contractEvent);
+            await EnqueueOutboxAsync(ContractTopics.TopicNames.LessonCompleted, ev.LessonId.ToString(), contractEvent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish LessonCompletedEvent for LessonId: {LessonId}", ev.LessonId);
+            _logger.LogError(ex, "Failed to enqueue LessonCompletedEvent for LessonId: {LessonId}", ev.LessonId);
             throw;
         }
     }
 
     public async Task PublishFeedbackSubmittedAsync(BackendEvents.FeedbackSubmittedEvent ev)
     {
-        _logger.LogInformation("Publishing FeedbackSubmittedEvent for LearnerId: {LearnerId}", ev.LearnerProfileId);
+        _logger.LogInformation("Outbox: Enqueueing FeedbackSubmittedEvent for LearnerId: {LearnerId}", ev.LearnerProfileId);
 
         try
         {
@@ -193,16 +219,28 @@ public class KafkaPublisher : IKafkaPublisher
                 SubmittedAt = DateTimeOffset.UtcNow
             };
 
-            await SendMessageAsync(ContractTopics.TopicNames.FeedbackSubmitted, ev.LearnerProfileId.ToString(), contractEvent);
+            await EnqueueOutboxAsync(ContractTopics.TopicNames.FeedbackSubmitted, ev.LearnerProfileId.ToString(), contractEvent);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish FeedbackSubmittedEvent for LearnerId: {LearnerId}", ev.LearnerProfileId);
+            _logger.LogError(ex, "Failed to enqueue FeedbackSubmittedEvent for LearnerId: {LearnerId}", ev.LearnerProfileId);
             throw;
         }
     }
 
-    private async Task SendMessageAsync<T>(string topic, string key, T payload) where T : ContractEvents.BaseEvent
+    public async Task PublishAsync(string topic, string key, object message)
+    {
+        if (message is ContractEvents.BaseEvent baseEvent)
+        {
+            await EnqueueOutboxAsync(topic, key, baseEvent);
+        }
+        else
+        {
+            throw new ArgumentException("Message must inherit from BaseEvent", nameof(message));
+        }
+    }
+
+    private async Task EnqueueOutboxAsync<T>(string topic, string key, T payload) where T : ContractEvents.BaseEvent
     {
         var messageJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
         {
@@ -210,37 +248,28 @@ public class KafkaPublisher : IKafkaPublisher
             WriteIndented = false
         });
 
-        var message = new Message<string, string>
+        var headers = new Dictionary<string, string>
         {
-            Key = key,
-            Value = messageJson
+            { "correlation-id", payload.CorrelationId.ToString() },
+            { "event-id", payload.EventId.ToString() },
+            { "event-type", payload.EventType }
         };
 
-        // Attach correlation metadata to headers
-        message.Headers = new Headers
+        var outboxMessage = new OutboxMessage
         {
-            { "correlation-id", payload.CorrelationId.ToByteArray() },
-            { "event-id", payload.EventId.ToByteArray() },
-            { "event-type", System.Text.Encoding.UTF8.GetBytes(payload.EventType) }
+            EventId = payload.EventId.ToString(),
+            AggregateType = payload.EventType,
+            AggregateId = key,
+            EventType = payload.EventType,
+            Topic = topic,
+            Payload = messageJson,
+            HeadersJson = JsonSerializer.Serialize(headers),
+            Status = OutboxStatus.Pending,
+            OccurredAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
         };
 
-        _logger.LogInformation("Sending message of type {EventType} to topic {Topic} with CorrelationId {CorrelationId}...", payload.EventType, topic, payload.CorrelationId);
-
-        var deliveryResult = await _producer.ProduceAsync(topic, message);
-        
-        _logger.LogInformation("Message successfully delivered to topic: {Topic}, partition: {Partition}, offset: {Offset}", 
-            deliveryResult.Topic, deliveryResult.Partition, deliveryResult.Offset);
-    }
-
-    public async Task PublishAsync(string topic, string key, object message)
-    {
-        if (message is ContractEvents.BaseEvent baseEvent)
-        {
-            await SendMessageAsync(topic, key, baseEvent);
-        }
-        else
-        {
-            throw new ArgumentException("Message must inherit from BaseEvent", nameof(message));
-        }
+        await _dbContext.OutboxMessages.AddAsync(outboxMessage);
+        await _dbContext.SaveChangesAsync();
     }
 }

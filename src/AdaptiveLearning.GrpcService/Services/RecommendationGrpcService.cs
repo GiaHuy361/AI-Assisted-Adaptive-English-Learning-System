@@ -4,17 +4,24 @@ using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using CoreLearningSystem.Application.Interfaces;
+using CoreLearningSystem.Domain.Enums;
 
 namespace AdaptiveLearning.GrpcService.Services;
 
 public class RecommendationGrpcService : RecommendationService.RecommendationServiceBase
 {
     private readonly IQuizWeaknessAnalyzer _analyzer;
+    private readonly IRecommendationService _recommendationService;
     private readonly ILogger<RecommendationGrpcService> _logger;
 
-    public RecommendationGrpcService(IQuizWeaknessAnalyzer analyzer, ILogger<RecommendationGrpcService> logger)
+    public RecommendationGrpcService(
+        IQuizWeaknessAnalyzer analyzer, 
+        IRecommendationService recommendationService,
+        ILogger<RecommendationGrpcService> logger)
     {
         _analyzer = analyzer;
+        _recommendationService = recommendationService;
         _logger = logger;
     }
 
@@ -189,5 +196,92 @@ public class RecommendationGrpcService : RecommendationService.RecommendationSer
             Version = "1.0.0",
             ServerTime = DateTime.UtcNow.ToString("o")
         });
+    }
+
+    public override async Task<GenerateRecommendationsResponse> GenerateRecommendations(GenerateRecommendationsRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation("gRPC GenerateRecommendations request received. EventId: {EventId}, UserId: {UserId}",
+            request.EventId, request.UserId);
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.EventId) || !Guid.TryParse(request.EventId, out _))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "EventId must be a valid, non-empty GUID string."));
+            }
+            if (request.UserId <= 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "UserId must be positive."));
+            }
+            if (request.LearnerProfileId <= 0)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "LearnerProfileId must be positive."));
+            }
+
+            SkillType? weakestSkill = null;
+            if (!string.IsNullOrWhiteSpace(request.WeakestSkill) && Enum.TryParse<SkillType>(request.WeakestSkill, true, out var skillVal))
+            {
+                weakestSkill = skillVal;
+            }
+
+            EnglishLevel currentLevel = EnglishLevel.None;
+            if (!string.IsNullOrWhiteSpace(request.CurrentLevel) && Enum.TryParse<EnglishLevel>(request.CurrentLevel, true, out var lvlVal))
+            {
+                currentLevel = lvlVal;
+            }
+
+            var internalRequest = new CoreLearningSystem.Application.DTOs.Common.RecommendationRequest
+            {
+                UserId = request.UserId,
+                LearnerProfileId = request.LearnerProfileId,
+                SourceEventId = request.EventId,
+                WeakestSkill = weakestSkill,
+                WeakTopics = request.WeakTopics.ToList(),
+                Level = currentLevel,
+                OccurredAt = DateTime.UtcNow
+            };
+
+            var result = await _recommendationService.GenerateRecommendationsAsync(internalRequest);
+
+            var response = new GenerateRecommendationsResponse
+            {
+                Success = true,
+                GeneratedAt = DateTime.UtcNow.ToString("o"),
+                OverallReason = result.OverallReason,
+                Message = "Recommendations generated successfully via gRPC."
+            };
+
+            var lessons = result.RecommendedLessons;
+            if (request.MaxRecommendations > 0)
+            {
+                lessons = lessons.Take(request.MaxRecommendations).ToList();
+            }
+
+            response.Recommendations.AddRange(lessons.Select(l => new RecommendedLesson
+            {
+                LessonId = l.LessonId,
+                Title = l.Title,
+                PriorityScore = l.PriorityScore,
+                Reason = l.Reason,
+                Skill = weakestSkill?.ToString() ?? string.Empty,
+                Topic = request.WeakTopics.FirstOrDefault() ?? string.Empty,
+                Level = currentLevel.ToString()
+            }));
+
+            return response;
+        }
+        catch (RpcException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error occurred during GenerateRecommendations. EventId: {EventId}", request.EventId);
+            throw new RpcException(new Status(StatusCode.Internal, "An unexpected internal error occurred on the server."));
+        }
     }
 }

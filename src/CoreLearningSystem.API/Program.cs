@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using CoreLearningSystem.Application;
+using CoreLearningSystem.Application.Interfaces;
 using CoreLearningSystem.Infrastructure;
 using CoreLearningSystem.API.Middlewares;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +72,31 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings.GetValue<string>("Issuer") ?? "AdaptiveEnglishLearningCore",
         ValidAudience = jwtSettings.GetValue<string>("Audience") ?? "AdaptiveEnglishLearningCoreUsers",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var validator = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationValidator>();
+            var claimsPrincipal = context.Principal;
+            if (claimsPrincipal == null)
+            {
+                context.Fail("No claims principal.");
+                return;
+            }
+            var jwtIdClaim = claimsPrincipal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti);
+            if (jwtIdClaim == null)
+            {
+                context.Fail("Token does not contain jti claim.");
+                return;
+            }
+            var jwtId = jwtIdClaim.Value;
+            var isRevoked = await validator.IsTokenRevokedAsync(jwtId);
+            if (isRevoked)
+            {
+                context.Fail("Token has been revoked or session has expired/revoked.");
+            }
+        }
     };
 });
 
