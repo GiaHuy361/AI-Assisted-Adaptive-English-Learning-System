@@ -54,9 +54,10 @@ Before running the application, make sure you have the following installed:
 
 ## 4. Local Environment Setup
 
-1. Clone the repository and checkout the active branch:
+1. Clone the repository and switch to the main branch:
    ```bash
-   git checkout feature/huy-backend-adaptive
+   git checkout main
+   git pull origin main
    ```
 2. Create the `.env` file in the root directory by copying the template:
    ```bash
@@ -127,7 +128,10 @@ For complete Mermaid sequence flow charts, database transaction boundaries, and 
 
 For troubleshooting logs, backups, and common port conflicts, see the [Operations Guide](file:///d:/PRN232/AI-Assisted-Adaptive-English-Learning-System/docs/operations.md).
 
-### 7.1. Kafka Topics
+### 7.1. Kafka Topics (Backend Internal)
+
+> These topics are managed internally by the Worker service. **Frontend does not interact with Kafka directly.**
+
 - `placement-test-completed-topic`: Placement test details published on submission.
 - `quiz-submitted-topic`: Raw quiz answers and scores for worker consumption.
 - `lesson-completed-topic`: Triggered when a learner completes studying a lesson.
@@ -137,14 +141,17 @@ For troubleshooting logs, backups, and common port conflicts, see the [Operation
 - `notification-created-topic`: Triggers email/in-app delivery worker loops.
 - `dead-letter-topic`: Topic where poison/unhandled failure messages are routed.
 
-### 7.2. Redis Cache Keys
+### 7.2. Redis Cache Keys (Backend Internal)
+
+> These cache keys are managed internally by the API and Worker services. **Frontend does not interact with Redis directly.**
+
 - `adaptive:v1:lessons:list-version`: Key keeping track of the latest version of the lesson list.
 - `adaptive:v1:lessons:list:v{N}:{skill}:{level}:{role}`: Versioned cache for lesson list queries.
 - `adaptive:v1:lessons:detail:{id}`: Cached lesson detail metadata.
-- `adaptive:v1:skill-matrix:{profileId}`: Serailized learner skill matrices.
+- `adaptive:v1:skill-matrix:{profileId}`: Serialized learner skill matrices.
 - `adaptive:v1:recommendations:active:{profileId}`: Active lesson recommendations.
 - `adaptive:v1:progress:summary:{profileId}`: Core progress tracking caches.
-- `adaptive:v1:processed-event:{eventId}`: Key preventing duplicate event execution (idempotency processing/completed states).
+- `adaptive:v1:processed-event:{eventId}`: Key preventing duplicate event execution (distributed idempotency).
 
 ---
 
@@ -190,7 +197,33 @@ To verify the E2E health of the containerized stack:
 
 ---
 
-## 10. Known Limitations
+## 10. Frontend Scope Summary
+
+Frontend only needs to call REST API at `http://localhost:5292`. See [Frontend Integration Guide](./docs/frontend-api-handoff-huy-adaptive.md) for full details.
+
+**Frontend screens to build (Huy's scope):**
+- Adaptive Dashboard (Skill Matrix + progress overview)
+- Learning Path / Recommended Lessons
+- Goals page
+- Notifications
+- Admin Feedback Analysis
+
+**Frontend does NOT build UI for:**
+- Kafka / DLQ management
+- Redis cache internals
+- Hangfire job management
+- Worker / gRPC internals
+- Outbox Pattern
+- Session cleanup
+- Recommendation effectiveness analytics
+- Docker infrastructure
+
+**Frontend does NOT rewrite Hoang's scope:**
+- Auth, Lesson, Quiz, Placement Test, Progress (basic), Feedback (submit), Admin Dashboard (basic)
+
+---
+
+## 11. Known Limitations
 
 - **Outbox Pattern**: Not fully implemented. Event publish errors during database transaction commits are resolved by consumer-side retry loops.
 - **Email Gateway**: Weekly report emails default to `DevelopmentEmailSender` (logs outbound emails to standard log files) unless a valid SMTP host is configured.

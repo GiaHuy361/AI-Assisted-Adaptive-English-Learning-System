@@ -18,6 +18,9 @@ public interface ICacheKeyBuilder
     string ProgressSummary(int learnerProfileId);
     string ProgressDetails(int userId);
 
+    // Study Tip cache keys (short TTL: ~10 min)
+    string StudyTip(int learnerProfileId);
+
     // Idempotency event keys (for RedisProcessedEventStore)
     string ProcessedEventProcessing(string eventId);
     string ProcessedEventCompleted(string eventId);
