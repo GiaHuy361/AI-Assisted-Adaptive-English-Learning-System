@@ -2,6 +2,9 @@
 
 This document describes the high-level system architecture, service components, communication models, data persistence, and resiliency strategies for the AI-Assisted Adaptive English Learning System.
 
+> **Audience:** This is a **backend technical reference** for developers working on infrastructure, worker services, gRPC, Kafka, Redis, and Hangfire internals.  
+> **Frontend Team:** Refer to [Frontend Integration Guide](./frontend-api-handoff-huy-adaptive.md) for REST API contracts and frontend scope. Do **not** use this document to determine what UI to build.
+
 ---
 
 ## 1. System Overview & Component Diagram

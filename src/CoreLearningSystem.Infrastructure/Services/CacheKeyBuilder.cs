@@ -35,6 +35,9 @@ public sealed class CacheKeyBuilder : ICacheKeyBuilder
     public string ProgressSummary(int learnerProfileId) => $"{Ns}:progress:summary:{learnerProfileId}";
     public string ProgressDetails(int userId) => $"{Ns}:progress:details:{userId}";
 
+    // ── Study Tip ─────────────────────────────────────────────────────────
+    public string StudyTip(int learnerProfileId) => $"{Ns}:study-tip:{learnerProfileId}";
+
     // ── Processed Events ─────────────────────────────────────────────────────
     public string ProcessedEventProcessing(string eventId) => $"{Ns}:processed-event:processing:{eventId}";
     public string ProcessedEventCompleted(string eventId) => $"{Ns}:processed-event:completed:{eventId}";
