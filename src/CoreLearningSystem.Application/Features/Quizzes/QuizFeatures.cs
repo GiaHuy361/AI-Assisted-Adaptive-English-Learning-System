@@ -13,8 +13,8 @@ namespace CoreLearningSystem.Application.Features.Quizzes;
 
 public record QuizDto(int Id, string Title, string Description, int DurationMinutes, double PassingScore, double MaxScore, string Level);
 public record QuizDetailsDto(int Id, string Title, string Description, int DurationMinutes, double PassingScore, double MaxScore, string Level, int XpReward, List<QuestionDto> Questions);
-public record QuestionDto(int Id, string Content, string Text, string Skill, string Level, string Explanation, double Score, List<string> Options, int CorrectOptionIndex);
-public record QuestionInputDto(string Content, SkillType Skill, string Topic, EnglishLevel Level, string CorrectAnswer, string Explanation, List<string> Options, int CorrectOptionIndex, double Score);
+public record QuestionDto(int Id, string Content, string Text, string? ReadingText, string Skill, string Level, string Explanation, double Score, List<string> Options, int CorrectOptionIndex);
+public record QuestionInputDto(string Content, string? ReadingText, SkillType Skill, string Topic, EnglishLevel Level, string CorrectAnswer, string Explanation, List<string> Options, int CorrectOptionIndex, double Score);
 
 // READ ALL
 public record GetQuizzesQuery(EnglishLevel? Level) : IRequest<ApiResponse<IEnumerable<QuizDto>>>;
@@ -96,6 +96,7 @@ public class GetQuizByIdQueryHandler : IRequestHandler<GetQuizByIdQuery, ApiResp
                 q.Id,
                 q.Content,
                 q.Content, // Map Content to Text to match FE QuizQuestion.text
+                q.ReadingText,
                 q.Skill.ToString(),
                 q.Level.ToString(),
                 q.Explanation,
@@ -315,6 +316,7 @@ public class BulkAddQuestionsCommandHandler : IRequestHandler<BulkAddQuestionsCo
             {
                 QuizId = request.QuizId,
                 Content = q.Content,
+                ReadingText = q.ReadingText,
                 Skill = q.Skill,
                 Topic = q.Topic,
                 Level = q.Level,

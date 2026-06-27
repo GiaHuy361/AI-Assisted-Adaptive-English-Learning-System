@@ -165,7 +165,7 @@ public static class DataSeeder
                     Lessons = new List<LessonSeed>
                     {
                         new LessonSeed { Title = "Present Simple Basics", Content = "We use the Present Simple to talk about habits, routines and general truths. Example: She works as a teacher.", Skill = SkillType.Grammar, Topic = "Present Simple", Duration = 15 },
-                        new LessonSeed { Title = "Basic Introductions", Content = "Learn how to introduce yourself and others. Key phrases: 'Hello, my name is John. Nice to meet you.'", Skill = SkillType.Speaking, Topic = "Introductions", Duration = 20 }
+                        new LessonSeed { Title = "Basic Introductions", Content = "Learn how to introduce yourself and others. Key phrases: 'Hello, my name is John. Nice to meet you.'", Skill = SkillType.Vocabulary, Topic = "Introductions", Duration = 20 }
                     },
                     Questions = new List<QuestionSeed>
                     {
@@ -199,7 +199,7 @@ public static class DataSeeder
                     Lessons = new List<LessonSeed>
                     {
                         new LessonSeed { Title = "Present Perfect vs Past Simple", Content = "Use Present Perfect for life experiences without a specific time. Use Past Simple for finished events with a time marker.", Skill = SkillType.Grammar, Topic = "Present Perfect", Duration = 15 },
-                        new LessonSeed { Title = "Giving Advice and Suggestions", Content = "Use modal verbs like 'should', 'ought to', and 'had better' to give recommendations. Example: You should see a doctor.", Skill = SkillType.Listening, Topic = "Modal Verbs", Duration = 20 }
+                        new LessonSeed { Title = "Giving Advice and Suggestions", Content = "Use modal verbs like 'should', 'ought to', and 'had better' to give recommendations. Example: You should see a doctor.", Skill = SkillType.Grammar, Topic = "Modal Verbs", Duration = 20 }
                     },
                     Questions = new List<QuestionSeed>
                     {
@@ -216,7 +216,7 @@ public static class DataSeeder
                     Lessons = new List<LessonSeed>
                     {
                         new LessonSeed { Title = "First and Second Conditionals", Content = "First Conditional: real future possibilities (If it rains, we will stay). Second Conditional: imaginary present/future (If I won the lottery, I would buy a car).", Skill = SkillType.Grammar, Topic = "Conditionals", Duration = 15 },
-                        new LessonSeed { Title = "Passive Voice in Business", Content = "Use the passive voice to focus on the action rather than the doer. Example: The project was completed on schedule.", Skill = SkillType.Writing, Topic = "Passive Voice", Duration = 20 }
+                        new LessonSeed { Title = "Passive Voice in Business", Content = "Use the passive voice to focus on the action rather than the doer. Example: The project was completed on schedule.", Skill = SkillType.Grammar, Topic = "Passive Voice", Duration = 20 }
                     },
                     Questions = new List<QuestionSeed>
                     {

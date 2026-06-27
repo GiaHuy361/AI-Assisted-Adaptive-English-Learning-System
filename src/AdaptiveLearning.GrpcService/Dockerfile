@@ -21,6 +21,6 @@ USER root
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 
-EXPOSE 50051
-EXPOSE 50080
+EXPOSE 50551
+EXPOSE 50580
 ENTRYPOINT ["dotnet", "AdaptiveLearning.GrpcService.dll"]

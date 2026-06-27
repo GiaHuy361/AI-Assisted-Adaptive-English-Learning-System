@@ -97,17 +97,42 @@ public class LessonsController : ApiControllerBase
 
         var dbContext = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
 
+        var dto = result.Data!;
+
         bool isCompleted = false;
+        bool hasQuizAttempted = false;
+        bool hasQuizPassed = false;
+        bool requiresStudyAgain = false;
+
         if (userId.HasValue)
         {
             var profile = await dbContext.LearnerProfiles.FirstOrDefaultAsync(p => p.UserId == userId.Value);
             if (profile != null)
             {
-                isCompleted = await dbContext.LearnerProgresses.AnyAsync(p => p.LearnerProfileId == profile.Id && p.LessonId == id && p.IsCompleted);
+                var progress = await dbContext.LearnerProgresses
+                    .FirstOrDefaultAsync(p => p.LearnerProfileId == profile.Id && p.LessonId == id);
+                isCompleted = progress != null && progress.IsCompleted;
+
+                if (dto.QuizId.HasValue)
+                {
+                    var attempts = await dbContext.QuizAttempts
+                        .Where(a => a.LearnerProfileId == profile.Id && a.QuizId == dto.QuizId.Value)
+                        .ToListAsync();
+                    
+                    hasQuizAttempted = attempts.Any();
+                    hasQuizPassed = attempts.Any(a => a.IsPassed);
+
+                    if (hasQuizAttempted && !hasQuizPassed)
+                    {
+                        var latestAttempt = attempts.OrderByDescending(a => a.AttemptedAt).First();
+                        if (progress == null || !progress.IsCompleted || (progress.CompletedAt.HasValue && latestAttempt.AttemptedAt > progress.CompletedAt.Value))
+                        {
+                            requiresStudyAgain = true;
+                        }
+                    }
+                }
             }
         }
-
-        var dto = result.Data!;
         return Ok(new {
             id = dto.Id,
             title = dto.Title,
@@ -121,7 +146,10 @@ public class LessonsController : ApiControllerBase
             linkedQuizTitle = dto.QuizTitle,
             linkedQuizTimeLimitMinutes = dto.QuizDurationMinutes,
             linkedQuizMaxScore = dto.QuizMaxScore,
-            isCompleted = isCompleted
+            isCompleted = isCompleted,
+            hasQuizAttempted = hasQuizAttempted,
+            hasQuizPassed = hasQuizPassed,
+            requiresStudyAgain = requiresStudyAgain
         });
     }
 
@@ -171,6 +199,38 @@ public class LessonsController : ApiControllerBase
         await CheckAndPromoteUserLevelAsync(dbContext, profile, HttpContext.RequestAborted);
 
         return Ok(new { success = true, message = "Trạng thái tiến độ bài học đã được lưu vĩnh viễn vào MySQL!" });
+    }
+
+    [HttpPost("{id}/study-again")]
+    public async Task<IActionResult> StudyAgain([FromRoute] int id)
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Unauthorized(new { success = false, message = "Unauthorized access." });
+        }
+
+        var dbContext = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+
+        var profile = await dbContext.LearnerProfiles.FirstOrDefaultAsync(l => l.UserId == userId);
+        if (profile == null)
+        {
+            return BadRequest(new { success = false, message = "Learner profile not found." });
+        }
+
+        var progress = await dbContext.LearnerProgresses
+            .FirstOrDefaultAsync(p => p.LearnerProfileId == profile.Id && p.LessonId == id);
+
+        if (progress != null)
+        {
+            progress.IsCompleted = false;
+            progress.CompletedAt = null;
+            progress.LastAccessedAt = DateTime.UtcNow;
+            dbContext.LearnerProgresses.Update(progress);
+            await dbContext.SaveChangesAsync();
+        }
+
+        return Ok(new { success = true, message = "Trạng thái bài học đã chuyển sang học lại!" });
     }
 
     private async Task CheckAndPromoteUserLevelAsync(AppDbContext dbContext, LearnerProfile learner, System.Threading.CancellationToken cancellationToken)

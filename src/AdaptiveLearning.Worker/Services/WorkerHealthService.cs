@@ -98,16 +98,16 @@ public class WorkerHealthService : BackgroundService
         string grpcStatus = "Unhealthy";
         try
         {
-            // Map grpc-service URL from options to its HTTP health endpoint (port 50080)
-            var serviceUrl = _grpcOptions.ServiceUrl ?? "http://grpc-service:50051";
+            // Map grpc-service URL from options to its HTTP health endpoint (port 50580)
+            var serviceUrl = _grpcOptions.ServiceUrl ?? "http://grpc-service:50551";
             var healthUrl = serviceUrl;
-            if (serviceUrl.Contains("grpc-service:50051"))
+            if (serviceUrl.Contains("grpc-service:50551"))
             {
-                healthUrl = "http://grpc-service:50080/health";
+                healthUrl = "http://grpc-service:50580/health";
             }
-            else if (serviceUrl.Contains("localhost:50051"))
+            else if (serviceUrl.Contains("localhost:50551"))
             {
-                healthUrl = "http://localhost:50080/health";
+                healthUrl = "http://localhost:50580/health";
             }
 
             var response = await _httpClient.GetAsync(healthUrl, cancellationToken);

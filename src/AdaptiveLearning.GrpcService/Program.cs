@@ -23,8 +23,8 @@ app.MapGet("/", () => Results.Json(new
     version  = "1.0.0",
     endpoints = new
     {
-        health           = "http://localhost:50080/health",
-        grpc_cleartext   = "grpc://localhost:50051"
+        health           = "http://localhost:50580/health",
+        grpc_cleartext   = "grpc://localhost:50551"
     }
 }));
 app.MapGet("/health", () => Results.Json(new { status = "Healthy", service = "AdaptiveLearning.GrpcService" }));

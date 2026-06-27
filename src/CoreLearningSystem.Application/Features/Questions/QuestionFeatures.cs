@@ -13,7 +13,7 @@ using CoreLearningSystem.Application.Interfaces;
 namespace CoreLearningSystem.Application.Features.Questions;
 
 public record AnswerOptionDto(int Id, string OptionText, bool IsCorrect);
-public record QuestionDetailDto(int Id, int QuizId, string Content, string Skill, string Topic, string Level, string CorrectAnswer, string Explanation, List<AnswerOptionDto> Options, double Score);
+public record QuestionDetailDto(int Id, int QuizId, string Content, string? ReadingText, string Skill, string Topic, string Level, string CorrectAnswer, string Explanation, List<AnswerOptionDto> Options, double Score);
 
 // READ ALL
 public record GetQuestionsQuery() : IRequest<ApiResponse<IEnumerable<QuestionDetailDto>>>;
@@ -39,6 +39,7 @@ public class GetQuestionsQueryHandler : IRequestHandler<GetQuestionsQuery, ApiRe
             q.Id,
             q.QuizId,
             q.Content,
+            q.ReadingText,
             q.Skill.ToString(),
             q.Topic,
             q.Level.ToString(),
@@ -55,7 +56,7 @@ public class GetQuestionsQueryHandler : IRequestHandler<GetQuestionsQuery, ApiRe
 }
 
 // CREATE
-public record CreateQuestionCommand(int QuizId, string Content, SkillType Skill, string Topic, EnglishLevel Level, string CorrectAnswer, string Explanation, List<string> Options, int CorrectOptionIndex, double Score) : IRequest<ApiResponse<QuestionDetailDto>>;
+public record CreateQuestionCommand(int QuizId, string Content, string? ReadingText, SkillType Skill, string Topic, EnglishLevel Level, string CorrectAnswer, string Explanation, List<string> Options, int CorrectOptionIndex, double Score) : IRequest<ApiResponse<QuestionDetailDto>>;
 
 public class CreateQuestionCommandValidator : AbstractValidator<CreateQuestionCommand>
 {
@@ -100,6 +101,7 @@ public class CreateQuestionCommandHandler : IRequestHandler<CreateQuestionComman
         {
             QuizId = request.QuizId,
             Content = request.Content,
+            ReadingText = request.ReadingText,
             Skill = request.Skill,
             Topic = request.Topic,
             Level = request.Level,
@@ -124,6 +126,7 @@ public class CreateQuestionCommandHandler : IRequestHandler<CreateQuestionComman
             question.Id,
             question.QuizId,
             question.Content,
+            question.ReadingText,
             question.Skill.ToString(),
             question.Topic,
             question.Level.ToString(),
@@ -138,7 +141,7 @@ public class CreateQuestionCommandHandler : IRequestHandler<CreateQuestionComman
 }
 
 // UPDATE
-public record UpdateQuestionCommand(int Id, int QuizId, string Content, SkillType Skill, string Topic, EnglishLevel Level, string CorrectAnswer, string Explanation, List<string> Options, int CorrectOptionIndex, double Score) : IRequest<ApiResponse<QuestionDetailDto>>;
+public record UpdateQuestionCommand(int Id, int QuizId, string Content, string? ReadingText, SkillType Skill, string Topic, EnglishLevel Level, string CorrectAnswer, string Explanation, List<string> Options, int CorrectOptionIndex, double Score) : IRequest<ApiResponse<QuestionDetailDto>>;
 
 public class UpdateQuestionCommandValidator : AbstractValidator<UpdateQuestionCommand>
 {
@@ -187,6 +190,7 @@ public class UpdateQuestionCommandHandler : IRequestHandler<UpdateQuestionComman
 
         question.QuizId = request.QuizId;
         question.Content = request.Content;
+        question.ReadingText = request.ReadingText;
         question.Skill = request.Skill;
         question.Topic = request.Topic;
         question.Level = request.Level;
@@ -218,6 +222,7 @@ public class UpdateQuestionCommandHandler : IRequestHandler<UpdateQuestionComman
             question.Id,
             question.QuizId,
             question.Content,
+            question.ReadingText,
             question.Skill.ToString(),
             question.Topic,
             question.Level.ToString(),

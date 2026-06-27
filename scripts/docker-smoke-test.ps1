@@ -77,7 +77,7 @@ try {
 
 Write-Host "Verifying gRPC health endpoint..." -ForegroundColor Yellow
 try {
-    $grpcResponse = Invoke-RestMethod -Uri "http://localhost:50080/health" -Method Get
+    $grpcResponse = Invoke-RestMethod -Uri "http://localhost:50580/health" -Method Get
     Write-Host "gRPC Health Response: $grpcResponse" -ForegroundColor Green
 } catch {
     Write-Host "gRPC Health Request failed: $_" -ForegroundColor Red

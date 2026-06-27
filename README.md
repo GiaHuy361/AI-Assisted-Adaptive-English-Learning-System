@@ -34,7 +34,7 @@ The AI-Assisted Adaptive English Learning System is a software engineering gradu
 |---|---|---|
 | **Backend API** | .NET 8 / ASP.NET Core | Port `5292` (host) / `8080` (container) |
 | **Worker Service** | .NET 8 Background Service / Hangfire | Port-free worker service |
-| **gRPC Service** | .NET 8 / ASP.NET Core gRPC | Port `50051` (gRPC HTTP/2), `50080` (HTTP/1.1 Health) |
+| **gRPC Service** | .NET 8 / ASP.NET Core gRPC | Port `50551` (gRPC HTTP/2), `50580` (HTTP/1.1 Health) |
 | **Database** | MySQL | Port `3306` (host) / `3306` (container) |
 | **Message Broker** | Apache Kafka | Port `9092` (host) / `29092` (container) |
 | **Cache** | Redis | Port `6379` (host) / `6379` (container) |
@@ -152,7 +152,7 @@ For troubleshooting logs, backups, and common port conflicts, see the [Operation
 
 Health checkpoints are registered on all core services:
 - **API `/health`**: Returns `Healthy` if MySQL connection is open. Degraded if Redis is disconnected.
-- **gRPC `/health`**: Accessible via HTTP/1.1 on port `50080` returning JSON `{ "Status": "Healthy" }`.
+- **gRPC `/health`**: Accessible via HTTP/1.1 on port `50580` returning JSON `{ "Status": "Healthy" }`.
 - **Worker Health**: Periodically writes status parameters to `/tmp/adaptive-worker-health.txt` containing Kafka connection state, Redis connection state, gRPC reachability, and Hangfire MySQL storage connection. Checked natively by Docker healthcheck commands.
 
 ---

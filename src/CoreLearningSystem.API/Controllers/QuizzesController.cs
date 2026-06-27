@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CoreLearningSystem.Application.DTOs.Common;
 using CoreLearningSystem.Application.Interfaces;
@@ -12,6 +13,7 @@ using CoreLearningSystem.Application.Features.Grading;
 using CoreLearningSystem.Application.Features.Placement;
 using CoreLearningSystem.Application.Features.StudentAnswers;
 using CoreLearningSystem.Domain.Enums;
+using CoreLearningSystem.Infrastructure.Persistence;
 
 namespace CoreLearningSystem.API.Controllers;
 
@@ -89,6 +91,42 @@ public class QuizzesController : ApiControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ApiResponse<QuizDetailsDto>>> GetById(int id)
     {
+        var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role);
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (roleClaim != null && roleClaim.Value == "Learner" && userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        {
+            var dbContext = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var profile = await dbContext.LearnerProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+            if (profile != null)
+            {
+                var attempts = await dbContext.QuizAttempts
+                    .Where(a => a.QuizId == id && a.LearnerProfileId == profile.Id)
+                    .ToListAsync();
+
+                if (attempts.Any(a => a.IsPassed))
+                {
+                    return BadRequest(ApiResponse<QuizDetailsDto>.FailureResponse("Bạn đã hoàn thành và vượt qua bài trắc nghiệm này rồi. Không thể làm lại."));
+                }
+
+                if (attempts.Any())
+                {
+                    var lesson = await dbContext.Lessons.FirstOrDefaultAsync(l => l.QuizId == id);
+                    if (lesson != null)
+                    {
+                        var progress = await dbContext.LearnerProgresses
+                            .FirstOrDefaultAsync(p => p.LearnerProfileId == profile.Id && p.LessonId == lesson.Id);
+                        
+                        var latestAttempt = attempts.OrderByDescending(a => a.AttemptedAt).First();
+
+                        if (progress == null || !progress.IsCompleted || (progress.CompletedAt.HasValue && latestAttempt.AttemptedAt > progress.CompletedAt.Value))
+                        {
+                            return BadRequest(ApiResponse<QuizDetailsDto>.FailureResponse("Bạn cần phải học lại lý thuyết và nhấn 'Đánh dấu hoàn thành' bài học trước khi có thể kiểm tra lại."));
+                        }
+                    }
+                }
+            }
+        }
+
         var result = await Mediator.Send(new GetQuizByIdQuery(id));
         if (!result.Success || result.Data == null)
         {

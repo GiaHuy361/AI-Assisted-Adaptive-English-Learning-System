@@ -18,7 +18,7 @@ public class PlacementAnswerInput
     public int SelectedOptionIndex { get; set; }
 }
 
-public record PlacementQuestionDto(int Id, string Text, List<string> Options);
+public record PlacementQuestionDto(int Id, string Text, string? ReadingText, List<string> Options);
 public record PlacementSubmitResponse(int Score, string CefrLevel, string Recommendation);
 
 // START TEST
@@ -92,6 +92,7 @@ public class StartPlacementTestCommandHandler : IRequestHandler<StartPlacementTe
         var questionDtos = questions.Select(q => new PlacementQuestionDto(
             q.Id,
             q.Content,
+            q.ReadingText,
             optionsByQuestion.TryGetValue(q.Id, out var opts) ? opts : new List<string>()
         )).ToList();
 

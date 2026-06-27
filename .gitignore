@@ -17,3 +17,10 @@ logs/
 *.db
 *.local
 tatus
+
+## IDE & AI Tool folders
+.agents/
+.goose/
+.hermes/
+skills-lock.json
+
