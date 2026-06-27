@@ -69,7 +69,7 @@ fi
 echo -e "\e[32mAPI Health Response: $API_HEALTH\e[0m"
 
 echo -e "\e[33mVerifying gRPC health endpoint...\e[0m"
-GRPC_HEALTH=$(curl -sf http://localhost:50080/health || echo "FAILED")
+GRPC_HEALTH=$(curl -sf http://localhost:50580/health || echo "FAILED")
 if [ "$GRPC_HEALTH" = "FAILED" ]; then
     echo -e "\e[31mgRPC Health Request failed\e[0m"
     exit 1

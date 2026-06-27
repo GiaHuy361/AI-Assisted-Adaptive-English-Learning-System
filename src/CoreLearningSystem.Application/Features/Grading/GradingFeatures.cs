@@ -97,12 +97,42 @@ public class SubmitQuizAttemptCommandHandler : IRequestHandler<SubmitQuizAttempt
 
         // Retrieve existing attempt if any using the profile's primary key (Id)
         var existingAttempts = await _attemptRepository.FindAsync(a => a.QuizId == request.Dto.QuizId && a.LearnerProfileId == learner.Id);
-        var existingAttempt = existingAttempts.FirstOrDefault();
+        var existingAttemptsList = existingAttempts.ToList();
+        var existingAttempt = existingAttemptsList.FirstOrDefault();
 
         if ((quiz.IsPlacementTest || quiz.Level == EnglishLevel.PlacementTest) && existingAttempt != null)
         {
             Console.WriteLine($"Placement test already taken by LearnerId: {learner.Id}");
             return ApiResponse<QuizAttemptResponseDto>.FailureResponse("Bạn đã thực hiện bài kiểm tra đánh giá năng lực đầu vào này rồi. Mỗi tài khoản chỉ được phép thực hiện một lần duy nhất.");
+        }
+
+        if (!(quiz.IsPlacementTest || quiz.Level == EnglishLevel.PlacementTest))
+        {
+            // Guard: If already passed
+            bool hasPassedBefore = existingAttemptsList.Any(a => a.IsPassed);
+            if (hasPassedBefore)
+            {
+                return ApiResponse<QuizAttemptResponseDto>.FailureResponse("Bạn đã hoàn thành và vượt qua bài trắc nghiệm này rồi. Không thể làm lại.");
+            }
+
+            // Guard: If failed before, must study again first
+            if (existingAttemptsList.Any())
+            {
+                var lessons = await _lessonRepository.FindAsync(l => l.QuizId == quiz.Id);
+                var lesson = lessons.FirstOrDefault();
+                if (lesson != null)
+                {
+                    var progresses = await _progressRepository.FindAsync(p => p.LearnerProfileId == learner.Id && p.LessonId == lesson.Id);
+                    var progress = progresses.FirstOrDefault();
+                    
+                    var latestAttempt = existingAttemptsList.OrderByDescending(a => a.AttemptedAt).First();
+                    
+                    if (progress == null || !progress.IsCompleted || (progress.CompletedAt.HasValue && latestAttempt.AttemptedAt > progress.CompletedAt.Value))
+                    {
+                        return ApiResponse<QuizAttemptResponseDto>.FailureResponse("Bạn cần phải học lại lý thuyết và nhấn 'Đánh dấu hoàn thành' bài học trước khi có thể kiểm tra lại.");
+                    }
+                }
+            }
         }
 
         // Fetch all questions related to this quiz
@@ -202,56 +232,22 @@ public class SubmitQuizAttemptCommandHandler : IRequestHandler<SubmitQuizAttempt
         double score = ((double)correctCount / totalQuestions) * 100.0;
         bool isPassed = score >= quiz.PassingScore;
 
-        int finalAttemptId;
-        if (existingAttempt != null)
+        var attempt = new QuizAttempt
         {
-            // Clear old details
-            var oldDetails = await _detailRepository.FindAsync(d => d.QuizAttemptId == existingAttempt.Id);
-            foreach (var d in oldDetails)
-            {
-                await _detailRepository.DeleteAsync(d);
-            }
-            await _detailRepository.SaveChangesAsync();
+            QuizId = request.Dto.QuizId,
+            LearnerProfileId = learner.Id,
+            Score = score,
+            CorrectAnswersCount = correctCount,
+            IncorrectAnswersCount = incorrectCount,
+            IsPassed = isPassed,
+            AttemptedAt = DateTime.UtcNow,
+            Details = attemptDetails
+        };
 
-            // Update properties
-            existingAttempt.Score = score;
-            existingAttempt.CorrectAnswersCount = correctCount;
-            existingAttempt.IncorrectAnswersCount = incorrectCount;
-            existingAttempt.IsPassed = isPassed;
-            existingAttempt.AttemptedAt = DateTime.UtcNow;
+        await _attemptRepository.AddAsync(attempt);
+        await _attemptRepository.SaveChangesAsync();
 
-            await _attemptRepository.UpdateAsync(existingAttempt);
-            await _attemptRepository.SaveChangesAsync();
-
-            // Add new details
-            foreach (var detail in attemptDetails)
-            {
-                detail.QuizAttemptId = existingAttempt.Id;
-                await _detailRepository.AddAsync(detail);
-            }
-            await _detailRepository.SaveChangesAsync();
-
-            finalAttemptId = existingAttempt.Id;
-        }
-        else
-        {
-            var attempt = new QuizAttempt
-            {
-                QuizId = request.Dto.QuizId,
-                LearnerProfileId = learner.Id,
-                Score = score,
-                CorrectAnswersCount = correctCount,
-                IncorrectAnswersCount = incorrectCount,
-                IsPassed = isPassed,
-                AttemptedAt = DateTime.UtcNow,
-                Details = attemptDetails
-            };
-
-            await _attemptRepository.AddAsync(attempt);
-            await _attemptRepository.SaveChangesAsync();
-
-            finalAttemptId = attempt.Id;
-        }
+        int finalAttemptId = attempt.Id;
 
         // 2. CRITICAL FIX: Only run adaptive level re-calculation if it is a placement test!
         if (quiz.IsPlacementTest || quiz.Level == EnglishLevel.PlacementTest)

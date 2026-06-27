@@ -9,6 +9,7 @@ public class Question
     public int Id { get; set; }
     public int QuizId { get; set; }
     public string Content { get; set; } = string.Empty;
+    public string? ReadingText { get; set; }
     public SkillType Skill { get; set; } = SkillType.General;
     public string Topic { get; set; } = string.Empty;
     public EnglishLevel Level { get; set; } = EnglishLevel.A1;

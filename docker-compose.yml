@@ -79,12 +79,12 @@ services:
     container_name: adaptive-learning-grpc-service
     restart: always
     ports:
-      - "50051:50051"
-      - "50080:50080"
+      - "50551:50551"
+      - "50580:50580"
     networks:
       - adaptive-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:50080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:50580/health"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -102,7 +102,7 @@ services:
       ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-AdaptiveEnglishLearningDb};Uid=${MYSQL_USER:-adaptive_user};Pwd=${MYSQL_PASSWORD:-12345};"
       Kafka__BootstrapServers: "kafka:29092"
       Redis__ConnectionString: "redis:6379"
-      RecommendationGrpc__ServiceUrl: "http://grpc-service:50051"
+      RecommendationGrpc__ServiceUrl: "http://grpc-service:50551"
       JwtSettings__Secret: ${JWT_SECRET:-YOUR_SUPER_SECRET_JWT_KEY_WITH_AT_LEAST_256_BITS_OF_ENTROPY}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
     depends_on:
@@ -129,7 +129,7 @@ services:
       ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-AdaptiveEnglishLearningDb};Uid=${MYSQL_USER:-adaptive_user};Pwd=${MYSQL_PASSWORD:-12345};Allow User Variables=True;"
       Kafka__BootstrapServers: "kafka:29092"
       Redis__ConnectionString: "redis:6379"
-      RecommendationGrpc__ServiceUrl: "http://grpc-service:50051"
+      RecommendationGrpc__ServiceUrl: "http://grpc-service:50551"
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
     depends_on:
       mysql:

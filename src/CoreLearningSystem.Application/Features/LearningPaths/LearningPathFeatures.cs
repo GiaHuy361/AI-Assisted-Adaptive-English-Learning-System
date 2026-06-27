@@ -35,9 +35,15 @@ public class GetLearningPathQueryHandler : IRequestHandler<GetLearningPathQuery,
 
     public async Task<ApiResponse<LearningPathDto>> Handle(GetLearningPathQuery request, CancellationToken cancellationToken)
     {
-        // 1. Resolve LearnerProfile by LearnerId (UserId or profile Id)
-        var learners = await _learnerRepository.FindAsync(l => l.UserId == request.LearnerId || l.Id == request.LearnerId);
+        // 1. Resolve LearnerProfile by LearnerId (prioritizing Profile Id, then falling back to UserId)
+        var learners = await _learnerRepository.FindAsync(l => l.Id == request.LearnerId);
         var learnerProfile = learners.FirstOrDefault();
+        if (learnerProfile == null)
+        {
+            learners = await _learnerRepository.FindAsync(l => l.UserId == request.LearnerId);
+            learnerProfile = learners.FirstOrDefault();
+        }
+
         if (learnerProfile == null)
         {
             return ApiResponse<LearningPathDto>.FailureResponse("No active Learner Profile found for this learner.");

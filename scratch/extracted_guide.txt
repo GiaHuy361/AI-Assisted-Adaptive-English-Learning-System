@@ -1,0 +1,593 @@
+﻿FRONTEND INTEGRATION GUIDE
+Huy's Adaptive Learning System
+Tài liệu tích hợp Frontend • API • Dashboard • Goals • Notifications • Admin Feedback
+Base URL Local
+http://localhost:5292
+Swagger UI
+http://localhost:5292/swagger
+Authentication
+JWT Bearer token qua Authorization Header
+Frontend gọi trực tiếp
+REST API qua cổng 5292 — không gọi Kafka / Redis / MySQL / Worker / gRPC
+Phiên bản Word được trình bày lại từ file handoff markdown, giữ nguyên toàn bộ nội dung gốc.
+
+Mục lục nội dung
+•  1. Thông tin chung cho Frontend
+•  2. Luồng nghiệp vụ tổng quan (Overview Flow)
+•  3. API Nhóm Learner – Adaptive Dashboard
+•  4. API Skill Matrix
+•  5. API Weakness Analysis
+•  6. API Recommendations & Learning Path
+•  7. API Goals
+•  8. API Achievements / Badges
+•  9. API Notifications
+•  10. API Weekly Report
+•  11. API Feedback Analysis – Admin Dashboard
+•  12. API Recommendation Analytics – Admin
+•  13. API Session & Token Revocation
+•  14. API Certificate Goal
+•  15. Định dạng phản hồi lỗi (Error Response Format)
+•  16. Đề xuất cấu trúc Router cho Frontend
+•  17. Đề xuất các Components cần xây dựng
+•  18. Quản lý trạng thái giao diện (UI State)
+•  19. Mẫu Curl kiểm tra nhanh (cURL Testing Samples)
+•  20. Checklist tích hợp cho Frontend (Integration Checklist)
+•  21. Frontend Implementation Scope – Phạm vi frontend cần làm
+
+Frontend Integration Guide: Huy's Adaptive Learning System
+Tài liệu này hướng dẫn Frontend Team tích hợp các tính năng thuộc hệ thống Học tập Thích ứng (Adaptive Learning) của Huy vào giao diện người dùng. Tài liệu sử dụng thông tin từ mã nguồn thực tế và được cấu trúc giúp Frontend có thể triển khai chính xác chỉ trong một lần.
+
+1. Thông tin chung cho Frontend
+•   Base URL Local: http://localhost:5292
+•   Swagger UI (OpenAPI): http://localhost:5292/swagger
+•   Khởi chạy hệ thống: docker compose up -d (Khởi động toàn bộ container dịch vụ)
+•   Cơ chế xác thực (Authentication):
+•   Sử dụng JWT Bearer token qua Header:
+HTTP
+        Authorization: Bearer <accessToken>
+•   Tái sử dụng luồng login/JWT hiện tại của phần Core Learning System.
+•   Dịch vụ nội bộ (Frontend KHÔNG gọi trực tiếp):
+•   Kafka, Redis, MySQL, Background Worker và gRPC service chạy ngầm. Frontend chỉ gọi REST API thông qua cổng chính 5292 (CoreLearningSystem.API).
+
+2. Luồng nghiệp vụ tổng quan (Overview Flow)
+1. Đăng nhập & Khởi tạo: User đăng nhập lấy JWT, hệ thống tự động khởi tạo hoặc nạp Learner Profile.
+2. Xem lộ trình & Tiến trình:
+•   User mở màn hình Adaptive Dashboard.
+•   Frontend gọi API lấy thông tin chi tiết tiến trình và đánh giá kỹ năng (Skill Matrix).
+•   Frontend gọi API lấy lộ trình bài học đề xuất thích ứng (Personalized Learning Path).
+•   Frontend gọi API lấy danh sách mục tiêu học tập hoạt động (Goals).
+3. Học bài & Kiểm tra:
+•   User chọn học bài học được đề xuất thích ứng.
+•   Khi hoàn thành bài học (POST /api/lessons/{id}/complete) hoặc nộp bài Quiz (POST /api/quizzes/submit):
+•   Hệ thống gửi event nội bộ qua Kafka.
+•   Background Worker nhận sự kiện và cập nhật: Skill Matrix (cập nhật điểm số kỹ năng và mức độ thông thạo), Learning Path (mở khóa bài học tiếp theo), Goals (tăng tiến trình mục tiêu).
+•   Nếu đạt điều kiện, hệ thống tự động trao tặng Huy hiệu (Badge) và tạo Thông báo (Notification).
+4. Phản hồi & Cập nhật:
+•   Hệ thống gửi báo cáo học tập tuần (Weekly Report) qua Email và Thông báo.
+•   Admin theo dõi các phân tích phản hồi (Feedback Analysis) để tinh chỉnh nội dung.
+•   Frontend lắng nghe hoặc refetch dữ liệu dashboard sau khi hoàn thành hành động học tập.
+
+3. API Nhóm Learner – Adaptive Dashboard
+Hệ thống không có API gộp duy nhất cho Dashboard của Learner để tối ưu hóa hiệu năng và cache. Frontend cần thực hiện gọi song song (hoặc tuần tự tùy thuộc UI) các API nhỏ dưới đây để dựng Dashboard hoàn chỉnh:
+•   Thông tin tiến trình chi tiết & Skill Matrix: GET /api/progress/details
+•   Lộ trình bài học thích ứng: GET /api/learningpaths/current và GET /api/learningpaths/{learnerId}
+•   Mục tiêu cá nhân: GET /api/goals/{learnerId}
+•   Thông báo & Bell Badge: GET /api/notifications
+
+4. API Skill Matrix
+Chi tiết kỹ năng (Skill Matrix) của Learner được tích hợp chung trong API chi tiết tiến trình để giảm thiểu số lượng HTTP request.
+4.1 Lấy thông tin chi tiết tiến trình & Skill Matrix
+•   Purpose: Lấy thống kê số lượng bài học hoàn thành, tỷ lệ hoàn thành, lịch sử thi quiz, lịch sử bài học và điểm số kỹ năng cụ thể của người học (Grammar, Vocabulary, Reading, Listening, Pronunciation,...).
+•   Endpoint: GET /api/progress/details
+•   Role: Learner (Yêu cầu đăng nhập)
+•   Headers:
+HTTP
+    Authorization: Bearer <accessToken>
+•   Request JSON: Không có.
+•   Response JSON (Mẫu thực tế từ DTO):
+JSON
+    {
+      "success": true,
+      "message": "Success",
+      "data": {
+        "userId": 2,
+        "learnerProfileId": 1,
+        "lessonsCompleted": 3,
+        "totalLessons": 12,
+        "overallCompletionRate": 25.0,
+        "quizzesDone": 2,
+        "quizzesPassed": 2,
+        "averageQuizScore": 8.5,
+        "quizHistory": [
+          {
+            "attemptId": 15,
+            "quizId": 5,
+            "quizTitle": "Grammar Intermediate Quiz",
+            "attemptedAt": "2026-06-08T07:15:30Z",
+            "score": 8.0,
+            "maxScore": 10.0,
+            "durationMinutes": 15,
+            "isPassed": true
+          }
+        ],
+        "skillProgress": [
+          {
+            "skill": "Grammar",
+            "averageScorePercent": 80.0,
+            "correctQuestions": 8,
+            "totalQuestions": 10
+          },
+          {
+            "skill": "Vocabulary",
+            "averageScorePercent": 90.0,
+            "correctQuestions": 9,
+            "totalQuestions": 10
+          }
+        ],
+        "lessonHistory": [
+          {
+            "lessonId": 3,
+            "lessonTitle": "Present Simple Tense",
+            "skill": "Grammar",
+            "level": "A1",
+            "completedAt": "2026-06-08T06:30:00Z"
+          }
+        ]
+      }
+    }
+•   Frontend Usage:
+•   Mảng skillProgress đại diện cho Skill Matrix. Hiển thị biểu đồ cột hoặc Radar Chart về năng lực hiện tại của học viên (ví dụ: Grammar 80%, Vocabulary 90%).
+•   Hiển thị danh sách lịch sử làm bài thi tại quizHistory và lịch sử học bài tại lessonHistory.
+•   Tỷ lệ hoàn thành tổng thể hiển thị dạng thanh tiến trình (progress bar) bằng trường overallCompletionRate.
+•   Error cases:
+•   401 Unauthorized: Token hết hạn hoặc không hợp lệ.
+•   400 Bad Request: Learner Profile hoặc User không tồn tại.
+
+5. API Weakness Analysis
+•   Trạng thái API: Internal only (Không có endpoint REST API công khai).
+•   Giải pháp cho Frontend: 
+•   Hệ thống phân tích điểm yếu học viên thông qua dịch vụ chạy ngầm SkillMatrixRecalculationJob và lưu vào bảng LearnerWeaknessHistory.
+•   Frontend hiển thị điểm yếu trực tiếp từ mảng skillProgress ở API GET /api/progress/details. Kỹ năng nào có averageScorePercent thấp nhất chính là điểm yếu cần tập trung (Ví dụ: dưới 50% là yếu, hiển thị cảnh báo đỏ).
+
+6. API Recommendations & Learning Path
+Lộ trình học và đề xuất thích ứng được quản lý tập trung thông qua thực thể LearningPath. Hệ thống tự động sắp xếp các bài học phù hợp với trình độ CEFR hiện tại của Learner.
+6.1 Lấy danh sách bước lộ trình tổng quát (CEFR Levels)
+•   Purpose: Trả về danh sách cấp độ từ cấp độ hiện tại của học viên đến C2 để dựng bản đồ lộ trình cấp độ (Roadmap).
+•   Endpoint: GET /api/learningpaths/current
+•   Role: Learner
+•   Headers:
+HTTP
+    Authorization: Bearer <accessToken>
+•   Response JSON:
+JSON
+    {
+      "success": true,
+      "message": "Success",
+      "data": [
+        {
+          "id": 1,
+          "title": "Cấp độ B1 - Intermediate (Current)",
+          "desc": "Mô tả kinh nghiệm, sự kiện, ước mơ và viết các văn bản đơn giản có tính liên kết.",
+          "status": "Active",
+          "xpReward": 300
+        },
+        {
+          "id": 2,
+          "title": "Cấp độ B2 - Upper-Intermediate",
+          "desc": "Hiểu các ý chính của văn bản phức tạp, giao tiếp trôi chảy với người bản xứ.",
+          "status": "Locked",
+          "xpReward": 450
+        }
+      ]
+    }
+•   Frontend Usage: Vẽ sơ đồ các chặng học CEFR (Roadmap). Cấp độ có status: "Active" chính là chặng hiện tại học viên đang học. Các cấp độ cao hơn sẽ bị Locked.
+6.2 Lấy chi tiết chuỗi bài học thích ứng (Recommended Lessons Chain)
+•   Purpose: Trả về danh sách chuỗi các bài học được sắp xếp theo thứ tự tối ưu thích ứng.
+•   Endpoint: GET /api/learningpaths/{learnerId}
+•   Role: Learner
+•   Headers:
+HTTP
+    Authorization: Bearer <accessToken>
+•   Response JSON:
+JSON
+    {
+      "success": true,
+      "message": "Success",
+      "data": {
+        "pathId": 5,
+        "learnerId": 1,
+        "status": "InProgress",
+        "items": [
+          {
+            "id": 0,
+            "lessonId": 6,
+            "lessonTitle": "Conditional Sentences Type 1",
+            "sequenceOrder": 1,
+            "status": "InProgress"
+          },
+          {
+            "id": 0,
+            "lessonId": 7,
+            "lessonTitle": "Relative Clauses",
+            "sequenceOrder": 2,
+            "status": "Locked"
+          }
+        ]
+      }
+    }
+•   Frontend Usage: 
+•   Hiển thị danh sách bài học đề xuất trong chặng hiện tại.
+•   Bài học có status: "InProgress" sẽ có nút "Học ngay", điều hướng người dùng tới trang học bài cũ dựa vào lessonId.
+•   Các bài học có trạng thái Locked hiển thị icon ổ khóa (học viên phải hoàn thành bài trước đó thì hệ thống mới tự động mở khóa bài tiếp theo).
+
+7. API Goals
+Học viên có thể xem, tạo mới mục tiêu học tập (ví dụ: hoàn thành bao nhiêu bài học, đạt bao nhiêu điểm thi trước hạn chót).
+7.1 Lấy danh sách mục tiêu cá nhân
+•   Endpoint: GET /api/goals/{learnerId}
+•   Role: Learner
+•   Response JSON:
+JSON
+    {
+      "success": true,
+      "message": "Success",
+      "data": [
+        {
+          "id": 10,
+          "learnerId": 1,
+          "target": "Hoàn thành 5 bài học Ngữ pháp",
+          "type": "LessonCount",
+          "progressPercentage": 60.0,
+          "isCompleted": false,
+          "deadline": "2026-06-15T00:00:00Z"
+        }
+      ]
+    }
+7.2 Tạo mục tiêu mới
+•   Endpoint: POST /api/goals
+•   Role: Learner
+•   Request JSON:
+JSON
+    {
+      "learnerId": 1,
+      "target": "Đạt trung bình 8.0 điểm Quiz",
+      "type": 1,
+      "deadline": "2026-06-20T23:59:59Z"
+    }
+*(Ghi chú type (GoalType enum): 0 = LessonCount, 1 = QuizScore, 2 = StudyTime, 3 = StreakDays, 4 = CertificateTest)*
+•   Response JSON: Trả về đối tượng GoalDto tương tự như API 7.1.
+7.3 Cập nhật tiến độ thủ công (cho phép chỉnh tiến trình trực tiếp)
+•   Endpoint: PUT /api/goals/{id}/progress
+•   Request JSON:
+JSON
+    {
+      "goalId": 10,
+      "progressPercentage": 80.0
+    }
+•   Frontend Usage:
+•   Hiển thị danh sách card tiến độ mục tiêu trên Dashboard.
+•   Thanh progress bar tương ứng với progressPercentage. Nếu isCompleted là true hiển thị trạng thái hoàn thành.
+•   Nếu thời gian hiện tại vượt quá deadline mà isCompleted là false, hiển thị trạng thái Quá hạn / Trễ hạn.
+
+8. API Achievements / Badges
+•   Trạng thái API: Internal only (Thiết kế hệ thống trao giải thưởng chạy ngầm thông qua Consumer Sự kiện).
+•   Giải pháp cho Frontend:
+•   Học viên nhận danh hiệu khi hoàn thành các chặng đặc biệt. Khi nhận được huy hiệu, hệ thống sẽ tạo một bản ghi thông báo mới.
+•   Học viên có thể đọc danh hiệu đã nhận thông qua nội dung hiển thị của Notification API (Ví dụ: "Chúc mừng! Bạn đã nhận được Huy hiệu 'Quiz Master'").
+
+9. API Notifications
+Quản lý hộp thư thông báo (Bell notification) để cập nhật nhắc nhở học tập, báo cáo tuần, phần thưởng huy hiệu hoặc cảnh báo.
+9.1 Lấy danh sách thông báo của người dùng
+•   Endpoint: GET /api/notifications
+•   Role: Learner
+•   Response JSON:
+JSON
+    {
+      "success": true,
+      "message": "Success",
+      "data": [
+        {
+          "id": 101,
+          "userId": 2,
+          "title": "Huy hiệu mới đạt được!",
+          "message": "Chúc mừng bạn đã đạt huy hiệu 'Goal Achiever' nhờ hoàn thành mục tiêu học tập trước hạn chót.",
+          "isRead": false,
+          "createdAt": "2026-06-08T07:20:00Z"
+        },
+        {
+          "id": 100,
+          "userId": 2,
+          "title": "Nhắc nhở học tập",
+          "message": "Bạn đã không học bài mới trong 3 ngày qua. Hãy cùng luyện tập hàng ngày để duy trì chuỗi học tập nhé!",
+          "isRead": true,
+          "createdAt": "2026-06-07T09:00:00Z"
+        }
+      ]
+    }
+9.2 Đánh dấu một thông báo đã đọc
+•   Endpoint: PUT /api/notifications/{id}/read
+•   Response JSON:
+JSON
+    {
+      "success": true,
+      "message": "Notification marked as read.",
+      "data": true
+    }
+9.3 Đánh dấu toàn bộ thông báo đã đọc
+•   Endpoint: POST /api/notifications/read-all
+•   Response/Request: Trả về success: true nếu thực hiện thành công.
+9.4 Xóa toàn bộ thông báo
+•   Endpoint: DELETE /api/notifications/clear-all
+•   Frontend Usage:
+•   Icon Chuông thông báo (Notification Bell) hiển thị số lượng đỏ (badge count) dựa vào số lượng phần tử có isRead == false ở API 9.1.
+•   Click vào từng thông báo gọi API 9.2 để đánh dấu đã đọc.
+•   Hiển thị danh sách thông báo sắp xếp theo thời gian mới nhất giảm dần.
+
+10. API Weekly Report
+•   Trạng thái API: Internal only (Tự động tổng hợp và gửi ngầm).
+•   Chi tiết: Công việc tổng hợp báo cáo học tập tuần được xử lý bởi WeeklyLearningReportJob định kỳ hàng tuần. Báo cáo này được chuyển thành email gửi cho học viên và tạo bản ghi thông báo nội dung tóm tắt gửi tới học viên. Frontend hiển thị báo cáo tuần thông qua API Notifications.
+
+11. API Feedback Analysis – Admin Dashboard
+Nhóm API dành riêng cho quản trị viên theo dõi mức độ hài lòng của người học về các bài học và đề xuất thích ứng.
+11.1 Xem toàn bộ phản hồi từ người học
+•   Endpoint: GET /api/feedback
+•   Role: Admin
+•   Response JSON:
+JSON
+    {
+      "success": true,
+      "message": "Success",
+      "data": [
+        {
+          "id": 4,
+          "userId": 2,
+          "subject": "Gợi ý bài học chưa chuẩn",
+          "content": "Tôi thấy bài học đề xuất hơi khó so với mức độ B1 hiện tại.",
+          "rating": 2,
+          "isResolved": false,
+          "resolvedAt": null
+        }
+      ]
+    }
+11.2 Duyệt phản hồi và đánh giá phân tích (Review)
+•   Endpoint: POST /api/feedback/{id}/review
+•   Role: Admin
+•   Request JSON:
+JSON
+    {
+      "feedbackId": 4,
+      "adminNotes": "Đã ghi nhận, chuyển thông tin sang nhóm phân tích kỹ năng để kiểm tra độ khó của bài học số 12."
+    }
+11.3 Xác nhận giải quyết phản hồi (Resolve)
+•   Endpoint: PUT /api/feedback/{id}/resolve
+•   Role: Admin
+
+12. API Recommendation Analytics – Admin
+•   Trạng thái API: Internal/Background Service (Chưa expose API REST công khai).
+•   Chi tiết: Các chỉ số đánh giá mức độ hiệu quả của thuật toán đề xuất được lưu vào thực thể RecommendationEffectiveness và RecommendationStatisticSnapshot. Hiện tại chưa được cung cấp qua endpoint REST công khai nào. Admin dashboard sẽ tạm thời chưa hiển thị biểu đồ phân tích thuật toán này.
+
+13. API Session & Token Revocation
+•   Logout Endpoint: POST /api/auth/logout
+•   Headers:
+HTTP
+    Authorization: Bearer <accessToken>
+•   Cơ chế hoạt động: Khi người dùng bấm Logout, hệ thống lưu token hiện tại vào Blacklist trên Redis để ngăn chặn các request sau đó sử dụng token cũ.
+•   Frontend Action: 
+•   Gọi POST /api/auth/logout khi người dùng nhấn nút Đăng xuất.
+•   Ngay sau đó, xóa hoàn toàn Token khỏi localStorage / sessionStorage.
+•   Nếu bất kỳ API nào trả về HTTP Status 401 Unauthorized, tự động xóa token và chuyển hướng người dùng về trang Đăng nhập (/login).
+
+14. API Certificate Goal
+•   Trạng thái API: Internal Flow (Thông qua thực thể CertificateTestResult).
+•   Chi tiết: Tiến trình chứng chỉ được xử lý tự động khi học viên làm bài thi Mock Test và hoàn thành mục tiêu chứng chỉ cụ thể. Trạng thái chứng chỉ sẽ hiển thị trực tiếp thông qua API Goals hoặc nhận thông báo từ API Notifications.
+
+15. Định dạng phản hồi lỗi (Error Response Format)
+Hệ thống backend sử dụng chung một cấu trúc phản hồi lỗi thống nhất từ ApiResponse:
+15.1 Lỗi xác thực dữ liệu (400 Bad Request)
+JSON
+{
+  "success": false,
+  "message": "Mismatched Goal ID.",
+  "data": null
+}
+15.2 Lỗi chưa đăng nhập (401 Unauthorized)
+JSON
+{
+  "success": false,
+  "message": "Unauthorized access.",
+  "data": null
+}
+15.3 Lỗi phân quyền (403 Forbidden)
+Trả về khi Learner cố tình truy cập vào các API quản trị của Admin (ví dụ: GET /api/feedback).
+
+16. Đề xuất cấu trúc Router cho Frontend
+16.1 Phân hệ Learner (Người học)
+•   /adaptive - Trang chủ Dashboard thích ứng (hiển thị Skill Matrix, gợi ý lộ trình chặng).
+•   /adaptive/path - Bản đồ lộ trình học tập chi tiết (Danh sách bài học đề xuất chặng hiện tại).
+•   /goals - Quản lý mục tiêu cá nhân (Danh sách mục tiêu và thanh tiến độ).
+•   /notifications - Trang danh sách thông báo.
+16.2 Phân hệ Admin (Quản trị viên)
+•   /admin/feedback - Trang quản lý, review và duyệt phản hồi đánh giá của học viên.
+
+17. Đề xuất các Components cần xây dựng
+1. SkillMatrixRadarChart: Vẽ biểu đồ mạng nhện năng lực từ trường skillProgress của GET /api/progress/details.
+2. AdaptiveRoadmapSteps: Hiển thị bản đồ lộ trình chặng CEFR từ GET /api/learningpaths/current.
+3. RecommendedLessonList: Danh sách bài học gợi ý, bài học hiện tại hiển thị nút nổi bật điều hướng học bài, bài học tương lai hiển thị icon khóa.
+4. GoalProgressBarCard: Card hiển thị từng mục tiêu với thanh tiến trình phần trăm và ngày hết hạn.
+5. NotificationBellDropdown: Dropdown chuông thông báo hiển thị danh sách rút gọn và số lượng thông báo chưa đọc.
+
+18. Quản lý trạng thái giao diện (UI State)
+•   Loading State: Hiển thị Skeleton cho biểu đồ Skill Matrix và danh sách bài học đề xuất trong lúc gọi API.
+•   Empty State: Hiển thị hình minh họa thân thiện khi không có thông báo nào hoặc chưa thiết lập mục tiêu nào.
+•   Chiến lược tải lại dữ liệu (Refetch Strategy):
+•   Sau khi hoàn thành bài học hoặc nộp bài Quiz: Gọi lại API GET /api/progress/details và GET /api/learningpaths/{learnerId} để cập nhật biểu đồ kỹ năng mới và mở khóa bài học tiếp theo.
+•   Sau khi tạo mục tiêu mới: Gọi lại API GET /api/goals/{learnerId}.
+
+19. Mẫu Curl kiểm tra nhanh (cURL Testing Samples)
+19.1 Lấy thông tin Skill Matrix & Tiến trình
+BASH
+curl -X GET "http://localhost:5292/api/progress/details" \
+     -H "Authorization: Bearer <TOKEN>"
+19.2 Lấy lộ trình bài học đề xuất
+BASH
+curl -X GET "http://localhost:5292/api/learningpaths/<LEARNER_ID>" \
+     -H "Authorization: Bearer <TOKEN>"
+19.3 Lấy danh sách mục tiêu cá nhân
+BASH
+curl -X GET "http://localhost:5292/api/goals/<LEARNER_ID>" \
+     -H "Authorization: Bearer <TOKEN>"
+19.4 Tạo mục tiêu mới
+BASH
+curl -X POST "http://localhost:5292/api/goals" \
+     -H "Authorization: Bearer <TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"learnerId": <LEARNER_ID>, "target": "Study Grammar", "type": 0, "deadline": "2026-06-15T00:00:00Z"}'
+19.5 Lấy danh sách thông báo
+BASH
+curl -X GET "http://localhost:5292/api/notifications" \
+     -H "Authorization: Bearer <TOKEN>"
+
+20. Checklist tích hợp cho Frontend (Integration Checklist)
+Màn hình
+API cần gọi
+Vai trò
+Trạng thái API
+Ghi chú
+Dashboard
+GET /api/progress/details
+Learner
+Sẵn sàng
+Lấy skill matrix và tóm tắt tiến độ bài học
+Learning Path
+GET /api/learningpaths/current
+Learner
+Sẵn sàng
+Dựng lộ trình các chặng CEFR tổng quát
+Learning Path
+GET /api/learningpaths/{learnerId}
+Learner
+Sẵn sàng
+Lấy danh sách bài học được đề xuất thích ứng
+Goals
+GET /api/goals/{learnerId}
+Learner
+Sẵn sàng
+Hiển thị tiến trình các mục tiêu học tập
+Goals
+POST /api/goals
+Learner
+Sẵn sàng
+Cho phép học viên tự thiết lập mục tiêu mới
+Notification
+GET /api/notifications
+Learner
+Sẵn sàng
+Lấy danh sách các nhắc nhở, phần thưởng
+Admin Feedback
+GET /api/feedback
+Admin
+Sẵn sàng
+Admin theo dõi đánh giá từ người dùng
+
+Checklist Xác nhận Kỹ thuật:
+☐ Token JWT được đính kèm tự động vào Header của mọi request thuộc phân hệ thích ứng.
+☐ Đã cấu hình biểu đồ Radar Chart hiển thị đúng cấu trúc kỹ năng từ trường skillProgress.
+☐ Đã điều hướng chính xác nút "Học ngay" của bài học đề xuất thích ứng sang màn hình chi tiết bài học của Core System.
+☐ Xử lý tự động xóa Token cục bộ và redirect về /login khi nhận mã lỗi 401.
+
+21. Frontend Implementation Scope – Phạm vi frontend cần làm
+21.1 Frontend làm được ngay bằng REST API hiện có
+Các màn hình frontend có thể triển khai ngay:
+1. Adaptive Dashboard
+• Dữ liệu từ GET /api/progress/details
+• Hiển thị tổng quan tiến độ, skillProgress, quizHistory, lessonHistory
+2. Skill Matrix Chart
+• Dữ liệu từ skillProgress trong GET /api/progress/details
+• Hiển thị radar chart/bar chart
+3. Learning Path / Recommended Lessons
+• Dữ liệu từ:
+• GET /api/learningpaths/current
+• GET /api/learningpaths/{learnerId}
+• Nút “Học ngay” điều hướng sang lesson detail cũ bằng lessonId
+4. Goals Page
+• Dữ liệu từ:
+• GET /api/goals/{learnerId}
+• POST /api/goals
+• PUT /api/goals/{id}/progress
+5. Notifications
+• Dữ liệu từ:
+• GET /api/notifications
+• PUT /api/notifications/{id}/read
+• POST /api/notifications/read-all
+• DELETE /api/notifications/clear-all
+6. Admin Feedback Management
+• Dữ liệu từ:
+• GET /api/feedback
+• POST /api/feedback/{id}/review
+• PUT /api/feedback/{id}/resolve
+7. Logout / Token Revocation
+• Dữ liệu từ:
+• POST /api/auth/logout
+• Frontend cần xóa token local sau logout.
+21.2 Frontend hiển thị gián tiếp qua API khác
+Các tính năng backend đã có nhưng chưa có REST endpoint riêng, frontend hiển thị gián tiếp:
+1. Weakness Analysis
+• Backend có LearnerWeaknessHistory và skill analysis.
+• Frontend hiện hiển thị điểm yếu bằng cách lấy skill thấp nhất trong skillProgress.
+2. Achievements / Badges
+• Backend có Achievement Engine và LearnerBadge.
+• Frontend hiện hiển thị badge/event nhận thưởng thông qua Notification API.
+3. Weekly Report
+• Backend có WeeklyLearningReportJob và email/notification.
+• Frontend hiện hiển thị tóm tắt weekly report thông qua Notification API.
+4. Certificate Goal
+• Backend có CertificateTestResult và goal verification.
+• Frontend hiện theo dõi qua Goals API và Notifications.
+5. Recommendation Analytics
+• Backend có RecommendationEffectiveness và RecommendationStatisticSnapshot.
+• Admin UI nâng cao cần REST endpoint riêng nếu muốn vẽ biểu đồ chi tiết.
+21.3 Frontend không cần làm / không được gọi trực tiếp
+Frontend không gọi trực tiếp:
+• Kafka
+• Redis
+• MySQL
+• AdaptiveLearning.Worker
+• AdaptiveLearning.GrpcService
+• Hangfire jobs
+• Outbox publisher
+• Background jobs
+• Docker internal services
+Frontend chỉ gọi REST API tại: http://localhost:5292
+21.4 Backend chạy thế nào cho frontend
+Cách A – Frontend tự chạy backend local
+BASH
+git checkout main
+git pull origin main
+docker compose up -d
+•   API: http://localhost:5292
+•   Swagger: http://localhost:5292/swagger
+Cách B – Dùng backend chạy sẵn trên máy người khác
+Frontend set API base URL sang IP máy đang chạy backend:
+HTTP
+http://<BACKEND_MACHINE_IP>:5292
+•   *Lưu ý:* Nếu máy backend tắt thì frontend không gọi API được. Vì vậy cách ổn định nhất là mỗi frontend dev tự chạy backend local bằng Docker.
+21.5 Checklist trước khi frontend bắt đầu code
+Frontend cần xác nhận:
+☐ Pull main mới nhất
+☐ Docker backend chạy healthy nếu tự chạy local
+☐ Swagger mở được
+☐ Login lấy token được
+☐ Token được gắn vào Authorization header
+☐ GET /api/progress/details gọi được
+☐ GET /api/learningpaths/current gọi được
+☐ GET /api/notifications gọi được
+☐ API base URL cấu hình đúng trong .env frontend
+21.6 Đề xuất thứ tự làm frontend phần Huy
+1. Kết nối API client + JWT interceptor
+2. Adaptive Dashboard
+3. Skill Matrix chart
+4. Learning Path / Recommended Lessons
+5. Goals page
+6. Notification bell + Notification page
+7. Admin Feedback page
+8. Polish UI loading/empty/error states
+— Hết tài liệu —

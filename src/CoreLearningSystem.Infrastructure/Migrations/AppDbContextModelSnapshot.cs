@@ -1007,6 +1007,9 @@ namespace CoreLearningSystem.Infrastructure.Migrations
                     b.Property<int>("QuizId")
                         .HasColumnType("int");
 
+                    b.Property<string>("ReadingText")
+                        .HasColumnType("longtext");
+
                     b.Property<double>("Score")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("double")
