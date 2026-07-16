@@ -130,7 +130,11 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHangfireDashboard();
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new NoAuthHangfireFilter() }
+});
+
 
 app.MapGet("/", async context =>
 {
@@ -185,3 +189,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+public class NoAuthHangfireFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
+{
+    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
+    {
+        return true;
+    }
+}
+

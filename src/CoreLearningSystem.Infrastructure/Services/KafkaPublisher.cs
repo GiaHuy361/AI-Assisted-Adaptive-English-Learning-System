@@ -242,7 +242,7 @@ public class KafkaPublisher : IKafkaPublisher
 
     private async Task EnqueueOutboxAsync<T>(string topic, string key, T payload) where T : ContractEvents.BaseEvent
     {
-        var messageJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        var messageJson = JsonSerializer.Serialize((object)payload, payload.GetType(), new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false

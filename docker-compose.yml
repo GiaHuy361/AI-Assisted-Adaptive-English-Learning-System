@@ -131,6 +131,13 @@ services:
       Redis__ConnectionString: "redis:6379"
       RecommendationGrpc__ServiceUrl: "http://grpc-service:50051"
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Email__Provider: "${SMTP_PROVIDER:-Smtp}"
+      Email__Host: "${SMTP_HOST}"
+      Email__Port: "${SMTP_PORT}"
+      Email__Username: "${SMTP_USERNAME}"
+      Email__Password: "${SMTP_PASSWORD}"
+      Email__FromName: "${SMTP_FROM_NAME}"
+      Email__FromAddress: "${SMTP_FROM_ADDRESS}"
     depends_on:
       mysql:
         condition: service_healthy
