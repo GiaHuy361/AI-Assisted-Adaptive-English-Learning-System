@@ -33,15 +33,18 @@ public class SubmitFeedbackCommandHandler : IRequestHandler<SubmitFeedbackComman
     private readonly IRepository<Domain.Entities.Feedback> _feedbackRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
     private readonly IKafkaPublisher _kafkaPublisher;
+    private readonly ISignalRService _signalRService;
 
     public SubmitFeedbackCommandHandler(
         IRepository<Domain.Entities.Feedback> feedbackRepository,
         IRepository<LearnerProfile> profileRepository,
-        IKafkaPublisher kafkaPublisher)
+        IKafkaPublisher kafkaPublisher,
+        ISignalRService signalRService)
     {
         _feedbackRepository = feedbackRepository;
         _profileRepository = profileRepository;
         _kafkaPublisher = kafkaPublisher;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<FeedbackDto>> Handle(SubmitFeedbackCommand request, CancellationToken cancellationToken)
@@ -93,6 +96,13 @@ public class SubmitFeedbackCommandHandler : IRequestHandler<SubmitFeedbackComman
             null, 
             null
         );
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Feedback", "Create", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<FeedbackDto>.SuccessResponse(dto, "Feedback submitted successfully.");
     }
 }
@@ -205,10 +215,12 @@ public record ReviewFeedbackCommand(int FeedbackId, int AdminId, string Comment)
 public class ReviewFeedbackCommandHandler : IRequestHandler<ReviewFeedbackCommand, ApiResponse<FeedbackDto>>
 {
     private readonly IRepository<Domain.Entities.Feedback> _feedbackRepository;
+    private readonly ISignalRService _signalRService;
 
-    public ReviewFeedbackCommandHandler(IRepository<Domain.Entities.Feedback> feedbackRepository)
+    public ReviewFeedbackCommandHandler(IRepository<Domain.Entities.Feedback> feedbackRepository, ISignalRService signalRService)
     {
         _feedbackRepository = feedbackRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<FeedbackDto>> Handle(ReviewFeedbackCommand request, CancellationToken cancellationToken)
@@ -236,6 +248,13 @@ public class ReviewFeedbackCommandHandler : IRequestHandler<ReviewFeedbackComman
             fb.ReviewComment,
             fb.ReviewedAt?.ToString("yyyy-MM-dd HH:mm:ss")
         );
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Feedback", "Review", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<FeedbackDto>.SuccessResponse(dto, "Feedback reviewed successfully.");
     }
 }
@@ -246,10 +265,12 @@ public record ResolveFeedbackCommand(int FeedbackId, int AdminId) : IRequest<Api
 public class ResolveFeedbackCommandHandler : IRequestHandler<ResolveFeedbackCommand, ApiResponse<FeedbackDto>>
 {
     private readonly IRepository<Domain.Entities.Feedback> _feedbackRepository;
+    private readonly ISignalRService _signalRService;
 
-    public ResolveFeedbackCommandHandler(IRepository<Domain.Entities.Feedback> feedbackRepository)
+    public ResolveFeedbackCommandHandler(IRepository<Domain.Entities.Feedback> feedbackRepository, ISignalRService signalRService)
     {
         _feedbackRepository = feedbackRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<FeedbackDto>> Handle(ResolveFeedbackCommand request, CancellationToken cancellationToken)
@@ -277,6 +298,13 @@ public class ResolveFeedbackCommandHandler : IRequestHandler<ResolveFeedbackComm
             fb.ReviewComment,
             fb.ReviewedAt?.ToString("yyyy-MM-dd HH:mm:ss")
         );
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Feedback", "Resolve", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<FeedbackDto>.SuccessResponse(dto, "Feedback resolved successfully.");
     }
 }
@@ -287,10 +315,12 @@ public record DeleteFeedbackCommand(int FeedbackId) : IRequest<ApiResponse<bool>
 public class DeleteFeedbackCommandHandler : IRequestHandler<DeleteFeedbackCommand, ApiResponse<bool>>
 {
     private readonly IRepository<Domain.Entities.Feedback> _feedbackRepository;
+    private readonly ISignalRService _signalRService;
 
-    public DeleteFeedbackCommandHandler(IRepository<Domain.Entities.Feedback> feedbackRepository)
+    public DeleteFeedbackCommandHandler(IRepository<Domain.Entities.Feedback> feedbackRepository, ISignalRService signalRService)
     {
         _feedbackRepository = feedbackRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(DeleteFeedbackCommand request, CancellationToken cancellationToken)
@@ -300,6 +330,12 @@ public class DeleteFeedbackCommandHandler : IRequestHandler<DeleteFeedbackComman
 
         await _feedbackRepository.DeleteAsync(fb);
         await _feedbackRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Feedback", "Delete", new { Id = request.FeedbackId });
+        }
+        catch (Exception) { }
 
         return ApiResponse<bool>.SuccessResponse(true, "Feedback deleted successfully.");
     }

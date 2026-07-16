@@ -324,11 +324,13 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, ApiRe
 {
     private readonly IRepository<User> _userRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
+    private readonly ISignalRService _signalRService;
 
-    public CreateUserCommandHandler(IRepository<User> userRepository, IRepository<LearnerProfile> profileRepository)
+    public CreateUserCommandHandler(IRepository<User> userRepository, IRepository<LearnerProfile> profileRepository, ISignalRService signalRService)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<UserDto>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -367,6 +369,13 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, ApiRe
         var activityStatusText = user.Role == UserRole.Learner ? "Tích cực" : "";
         var dto = new UserDto(user.Id, user.Username, user.Email, user.FullName, user.Role.ToString(), user.IsLocked, user.CreatedAt, user.LastLoginDate, activityStatusText, progressDto);
         dto.Level = user.Role == UserRole.Learner ? "Chưa làm bài đánh giá" : "A1";
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("User", "Create", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<UserDto>.SuccessResponse(dto, "User created successfully.");
     }
 }
@@ -379,15 +388,18 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, ApiRe
     private readonly IRepository<User> _userRepository;
     private readonly IRepository<LearnerProfile> _profileRepository;
     private readonly IRepository<PlacementTestResult> _placementResultRepository;
+    private readonly ISignalRService _signalRService;
 
     public UpdateUserCommandHandler(
         IRepository<User> userRepository, 
         IRepository<LearnerProfile> profileRepository,
-        IRepository<PlacementTestResult> placementResultRepository)
+        IRepository<PlacementTestResult> placementResultRepository,
+        ISignalRService signalRService)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
         _placementResultRepository = placementResultRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<UserDto>> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -414,6 +426,13 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, ApiRe
 
         var dto = new UserDto(user.Id, user.Username, user.Email, user.FullName, user.Role.ToString(), user.IsLocked, user.CreatedAt, user.LastLoginDate, "", null);
         dto.Level = level;
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("User", "Update", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<UserDto>.SuccessResponse(dto, "User updated successfully.");
     }
 }
@@ -424,10 +443,12 @@ public record DeleteUserCommand(int Id) : IRequest<ApiResponse<bool>>;
 public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ApiResponse<bool>>
 {
     private readonly IRepository<User> _userRepository;
+    private readonly ISignalRService _signalRService;
 
-    public DeleteUserCommandHandler(IRepository<User> userRepository)
+    public DeleteUserCommandHandler(IRepository<User> userRepository, ISignalRService signalRService)
     {
         _userRepository = userRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
@@ -437,6 +458,12 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, ApiRe
 
         await _userRepository.DeleteAsync(user);
         await _userRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("User", "Delete", new { Id = request.Id });
+        }
+        catch (Exception) { }
 
         return ApiResponse<bool>.SuccessResponse(true, "User deleted successfully.");
     }

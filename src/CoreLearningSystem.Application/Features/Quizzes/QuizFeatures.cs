@@ -128,10 +128,12 @@ public record CreateQuizCommand(string Title, string Description, int DurationMi
 public class CreateQuizCommandHandler : IRequestHandler<CreateQuizCommand, ApiResponse<QuizDto>>
 {
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public CreateQuizCommandHandler(IRepository<Quiz> quizRepository)
+    public CreateQuizCommandHandler(IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<QuizDto>> Handle(CreateQuizCommand request, CancellationToken cancellationToken)
@@ -160,6 +162,13 @@ public class CreateQuizCommandHandler : IRequestHandler<CreateQuizCommand, ApiRe
         await _quizRepository.SaveChangesAsync();
 
         var dto = new QuizDto(quiz.Id, quiz.Title, quiz.Description, quiz.DurationMinutes, quiz.PassingScore, quiz.MaxScore, quiz.Level.ToString());
+        
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Quiz", "Create", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<QuizDto>.SuccessResponse(dto, "Quiz created successfully.");
     }
 }
@@ -170,10 +179,12 @@ public record UpdateQuizCommand(int Id, string Title, string Description, int Du
 public class UpdateQuizCommandHandler : IRequestHandler<UpdateQuizCommand, ApiResponse<QuizDto>>
 {
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public UpdateQuizCommandHandler(IRepository<Quiz> quizRepository)
+    public UpdateQuizCommandHandler(IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<QuizDto>> Handle(UpdateQuizCommand request, CancellationToken cancellationToken)
@@ -201,6 +212,13 @@ public class UpdateQuizCommandHandler : IRequestHandler<UpdateQuizCommand, ApiRe
         await _quizRepository.SaveChangesAsync();
 
         var dto = new QuizDto(quiz.Id, quiz.Title, quiz.Description, quiz.DurationMinutes, quiz.PassingScore, quiz.MaxScore, quiz.Level.ToString());
+        
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Quiz", "Update", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<QuizDto>.SuccessResponse(dto, "Quiz updated successfully.");
     }
 }
@@ -211,10 +229,12 @@ public record DeleteQuizCommand(int Id) : IRequest<ApiResponse<bool>>;
 public class DeleteQuizCommandHandler : IRequestHandler<DeleteQuizCommand, ApiResponse<bool>>
 {
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public DeleteQuizCommandHandler(IRepository<Quiz> quizRepository)
+    public DeleteQuizCommandHandler(IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(DeleteQuizCommand request, CancellationToken cancellationToken)
@@ -224,6 +244,12 @@ public class DeleteQuizCommandHandler : IRequestHandler<DeleteQuizCommand, ApiRe
 
         await _quizRepository.DeleteAsync(quiz);
         await _quizRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Quiz", "Delete", new { Id = request.Id });
+        }
+        catch (Exception) { }
 
         return ApiResponse<bool>.SuccessResponse(true, "Quiz deleted successfully.");
     }
@@ -236,11 +262,13 @@ public class AttachQuestionToQuizCommandHandler : IRequestHandler<AttachQuestion
 {
     private readonly IRepository<Quiz> _quizRepository;
     private readonly IRepository<Question> _questionRepository;
+    private readonly ISignalRService _signalRService;
 
-    public AttachQuestionToQuizCommandHandler(IRepository<Quiz> quizRepository, IRepository<Question> questionRepository)
+    public AttachQuestionToQuizCommandHandler(IRepository<Quiz> quizRepository, IRepository<Question> questionRepository, ISignalRService signalRService)
     {
         _quizRepository = quizRepository;
         _questionRepository = questionRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(AttachQuestionToQuizCommand request, CancellationToken cancellationToken)
@@ -269,6 +297,12 @@ public class AttachQuestionToQuizCommandHandler : IRequestHandler<AttachQuestion
         await _questionRepository.UpdateAsync(question);
         await _questionRepository.SaveChangesAsync();
 
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Quiz", "AttachQuestion", new { QuizId = request.QuizId, QuestionId = request.QuestionId });
+        }
+        catch (Exception) { }
+
         return ApiResponse<bool>.SuccessResponse(true, "Question successfully attached to Quiz.");
     }
 }
@@ -280,11 +314,13 @@ public class BulkAddQuestionsCommandHandler : IRequestHandler<BulkAddQuestionsCo
 {
     private readonly IRepository<Quiz> _quizRepository;
     private readonly IRepository<Question> _questionRepository;
+    private readonly ISignalRService _signalRService;
 
-    public BulkAddQuestionsCommandHandler(IRepository<Quiz> quizRepository, IRepository<Question> questionRepository)
+    public BulkAddQuestionsCommandHandler(IRepository<Quiz> quizRepository, IRepository<Question> questionRepository, ISignalRService signalRService)
     {
         _quizRepository = quizRepository;
         _questionRepository = questionRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(BulkAddQuestionsCommand request, CancellationToken cancellationToken)
@@ -338,6 +374,13 @@ public class BulkAddQuestionsCommandHandler : IRequestHandler<BulkAddQuestionsCo
         }
 
         await _questionRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Quiz", "BulkAddQuestions", new { QuizId = request.QuizId });
+        }
+        catch (Exception) { }
+
         return ApiResponse<bool>.SuccessResponse(true, "Questions successfully added to Quiz package in bulk.");
     }
 }

@@ -95,11 +95,13 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, A
 {
     private readonly IRepository<Lesson> _lessonRepository;
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public CreateLessonCommandHandler(IRepository<Lesson> lessonRepository, IRepository<Quiz> quizRepository)
+    public CreateLessonCommandHandler(IRepository<Lesson> lessonRepository, IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _lessonRepository = lessonRepository;
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<LessonDto>> Handle(CreateLessonCommand request, CancellationToken cancellationToken)
@@ -135,6 +137,13 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, A
         await _lessonRepository.SaveChangesAsync();
 
         var dto = new LessonDto(lesson.Id, lesson.Title, lesson.Content, lesson.Skill.ToString(), lesson.Topic, lesson.Level.ToString(), lesson.DurationInMinutes, lesson.Status.ToString(), lesson.QuizId);
+        
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Lesson", "Create", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<LessonDto>.SuccessResponse(dto, "Lesson created successfully.");
     }
 }
@@ -146,11 +155,13 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand, A
 {
     private readonly IRepository<Lesson> _lessonRepository;
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public UpdateLessonCommandHandler(IRepository<Lesson> lessonRepository, IRepository<Quiz> quizRepository)
+    public UpdateLessonCommandHandler(IRepository<Lesson> lessonRepository, IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _lessonRepository = lessonRepository;
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<LessonDto>> Handle(UpdateLessonCommand request, CancellationToken cancellationToken)
@@ -186,6 +197,13 @@ public class UpdateLessonCommandHandler : IRequestHandler<UpdateLessonCommand, A
         await _lessonRepository.SaveChangesAsync();
 
         var dto = new LessonDto(lesson.Id, lesson.Title, lesson.Content, lesson.Skill.ToString(), lesson.Topic, lesson.Level.ToString(), lesson.DurationInMinutes, lesson.Status.ToString(), lesson.QuizId);
+        
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Lesson", "Update", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<LessonDto>.SuccessResponse(dto, "Lesson updated successfully.");
     }
 }
@@ -196,10 +214,12 @@ public record DeleteLessonCommand(int Id) : IRequest<ApiResponse<bool>>;
 public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand, ApiResponse<bool>>
 {
     private readonly IRepository<Lesson> _lessonRepository;
+    private readonly ISignalRService _signalRService;
 
-    public DeleteLessonCommandHandler(IRepository<Lesson> lessonRepository)
+    public DeleteLessonCommandHandler(IRepository<Lesson> lessonRepository, ISignalRService signalRService)
     {
         _lessonRepository = lessonRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(DeleteLessonCommand request, CancellationToken cancellationToken)
@@ -209,6 +229,12 @@ public class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand, A
 
         await _lessonRepository.DeleteAsync(lesson);
         await _lessonRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Lesson", "Delete", new { Id = request.Id });
+        }
+        catch (Exception) { }
 
         return ApiResponse<bool>.SuccessResponse(true, "Lesson deleted successfully.");
     }

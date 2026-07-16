@@ -18,6 +18,10 @@ builder.Services.AddApplicationServices();
 // 2. Register Infrastructure Layer Dependencies (DbContext, Repositories, Mock Publishers)
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+// Register SignalR and its service mapping
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<CoreLearningSystem.Application.Interfaces.ISignalRService, CoreLearningSystem.API.Hubs.SignalRService>();
+
 builder.Services.AddHealthChecks()
     .AddCheck<CoreLearningSystem.API.Health.MySqlHealthCheck>("mysql")
     .AddCheck<CoreLearningSystem.API.Health.RedisHealthCheck>("redis");
@@ -25,6 +29,7 @@ builder.Services.AddHealthChecks()
 builder.Services.AddControllers()
     .AddJsonOptions(options => {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
 
@@ -77,6 +82,16 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        },
         OnTokenValidated = async context =>
         {
             var validator = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationValidator>();
@@ -140,6 +155,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 });
 
 app.MapControllers();
+app.MapHub<CoreLearningSystem.API.Hubs.AppHub>("/hubs/app");
 app.MapHealthChecks("/health");
 
 // Root redirect → Swagger (click localhost:5292 trên Docker Desktop nhảy thẳng vào Swagger)
