@@ -40,10 +40,12 @@ public record MarkNotificationAsReadCommand(int NotificationId, int UserId) : IR
 public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotificationAsReadCommand, ApiResponse<bool>>
 {
     private readonly IRepository<Notification> _notificationRepository;
+    private readonly ISignalRService _signalRService;
 
-    public MarkNotificationAsReadCommandHandler(IRepository<Notification> notificationRepository)
+    public MarkNotificationAsReadCommandHandler(IRepository<Notification> notificationRepository, ISignalRService signalRService)
     {
         _notificationRepository = notificationRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(MarkNotificationAsReadCommand request, CancellationToken cancellationToken)
@@ -59,6 +61,12 @@ public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotifica
         await _notificationRepository.UpdateAsync(notification);
         await _notificationRepository.SaveChangesAsync();
 
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Notification", "MarkAsRead", new { Id = request.NotificationId, UserId = request.UserId });
+        }
+        catch (Exception) { }
+
         return ApiResponse<bool>.SuccessResponse(true, "Notification marked as read.");
     }
 }
@@ -69,10 +77,12 @@ public record MarkAllNotificationsAsReadCommand(int UserId) : IRequest<ApiRespon
 public class MarkAllNotificationsAsReadCommandHandler : IRequestHandler<MarkAllNotificationsAsReadCommand, ApiResponse<bool>>
 {
     private readonly IRepository<Notification> _notificationRepository;
+    private readonly ISignalRService _signalRService;
 
-    public MarkAllNotificationsAsReadCommandHandler(IRepository<Notification> notificationRepository)
+    public MarkAllNotificationsAsReadCommandHandler(IRepository<Notification> notificationRepository, ISignalRService signalRService)
     {
         _notificationRepository = notificationRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(MarkAllNotificationsAsReadCommand request, CancellationToken cancellationToken)
@@ -86,6 +96,13 @@ public class MarkAllNotificationsAsReadCommandHandler : IRequestHandler<MarkAllN
             await _notificationRepository.UpdateAsync(n);
         }
         await _notificationRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Notification", "MarkAllAsRead", new { UserId = request.UserId });
+        }
+        catch (Exception) { }
+
         return ApiResponse<bool>.SuccessResponse(true, "All notifications marked as read.");
     }
 }
@@ -96,10 +113,12 @@ public record ClearAllNotificationsCommand(int UserId) : IRequest<ApiResponse<bo
 public class ClearAllNotificationsCommandHandler : IRequestHandler<ClearAllNotificationsCommand, ApiResponse<bool>>
 {
     private readonly IRepository<Notification> _notificationRepository;
+    private readonly ISignalRService _signalRService;
 
-    public ClearAllNotificationsCommandHandler(IRepository<Notification> notificationRepository)
+    public ClearAllNotificationsCommandHandler(IRepository<Notification> notificationRepository, ISignalRService signalRService)
     {
         _notificationRepository = notificationRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(ClearAllNotificationsCommand request, CancellationToken cancellationToken)
@@ -110,6 +129,13 @@ public class ClearAllNotificationsCommandHandler : IRequestHandler<ClearAllNotif
             await _notificationRepository.DeleteAsync(n);
         }
         await _notificationRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Notification", "ClearAll", new { UserId = request.UserId });
+        }
+        catch (Exception) { }
+
         return ApiResponse<bool>.SuccessResponse(true, "All notifications cleared.");
     }
 }

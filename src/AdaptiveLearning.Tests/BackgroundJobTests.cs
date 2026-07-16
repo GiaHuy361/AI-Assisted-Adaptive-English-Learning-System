@@ -39,7 +39,8 @@ public class BackgroundJobTests : IDisposable
         _context.Database.EnsureCreated();
 
         _executor = new BackgroundJobExecutor(_context, new NullLogger<BackgroundJobExecutor>());
-        _notificationService = new NotificationService(_context, new MockKafkaPublisher(), new NullLogger<NotificationService>());
+        var mockSignalR = new Moq.Mock<ISignalRService>().Object;
+        _notificationService = new NotificationService(_context, new MockKafkaPublisher(), mockSignalR, new NullLogger<NotificationService>());
     }
 
     [Fact]

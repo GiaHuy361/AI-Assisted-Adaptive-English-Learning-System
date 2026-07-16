@@ -40,10 +40,12 @@ public record CreateGoalCommand(int LearnerId, string Target, GoalType Type, Dat
 public class CreateGoalCommandHandler : IRequestHandler<CreateGoalCommand, ApiResponse<GoalDto>>
 {
     private readonly IRepository<GoalSetting> _goalRepository;
+    private readonly ISignalRService _signalRService;
 
-    public CreateGoalCommandHandler(IRepository<GoalSetting> goalRepository)
+    public CreateGoalCommandHandler(IRepository<GoalSetting> goalRepository, ISignalRService signalRService)
     {
         _goalRepository = goalRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<GoalDto>> Handle(CreateGoalCommand request, CancellationToken cancellationToken)
@@ -63,6 +65,13 @@ public class CreateGoalCommandHandler : IRequestHandler<CreateGoalCommand, ApiRe
         await _goalRepository.SaveChangesAsync();
 
         var dto = new GoalDto(goal.Id, goal.LearnerProfileId, goal.Target, goal.Type.ToString(), goal.ProgressPercentage, goal.IsCompleted, goal.Deadline);
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Goal", "Create", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<GoalDto>.SuccessResponse(dto, "Goal created successfully.");
     }
 }
@@ -74,11 +83,13 @@ public class UpdateGoalProgressCommandHandler : IRequestHandler<UpdateGoalProgre
 {
     private readonly IRepository<GoalSetting> _goalRepository;
     private readonly IKafkaPublisher _kafkaPublisher;
+    private readonly ISignalRService _signalRService;
 
-    public UpdateGoalProgressCommandHandler(IRepository<GoalSetting> goalRepository, IKafkaPublisher kafkaPublisher)
+    public UpdateGoalProgressCommandHandler(IRepository<GoalSetting> goalRepository, IKafkaPublisher kafkaPublisher, ISignalRService signalRService)
     {
         _goalRepository = goalRepository;
         _kafkaPublisher = kafkaPublisher;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<GoalDto>> Handle(UpdateGoalProgressCommand request, CancellationToken cancellationToken)
@@ -101,6 +112,13 @@ public class UpdateGoalProgressCommandHandler : IRequestHandler<UpdateGoalProgre
         await _goalRepository.SaveChangesAsync();
 
         var dto = new GoalDto(goal.Id, goal.LearnerProfileId, goal.Target, goal.Type.ToString(), goal.ProgressPercentage, goal.IsCompleted, goal.Deadline);
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Goal", "UpdateProgress", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<GoalDto>.SuccessResponse(dto, "Goal progress updated successfully.");
     }
 }

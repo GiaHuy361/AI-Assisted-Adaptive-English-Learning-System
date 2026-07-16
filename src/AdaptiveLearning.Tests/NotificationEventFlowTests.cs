@@ -36,7 +36,8 @@ public class NotificationEventFlowTests : IDisposable
         _context = new AppDbContext(options);
         _context.Database.EnsureCreated();
 
-        _notificationService = new NotificationService(_context, new MockKafkaPublisher(), new NullLogger<NotificationService>());
+        var mockSignalR = new Moq.Mock<ISignalRService>().Object;
+        _notificationService = new NotificationService(_context, new MockKafkaPublisher(), mockSignalR, new NullLogger<NotificationService>());
         _emailSender = new MockEmailSender();
     }
 

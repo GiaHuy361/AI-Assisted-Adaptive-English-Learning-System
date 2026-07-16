@@ -93,6 +93,7 @@ public static class DependencyInjection
         services.AddScoped<IRecommendationAnalyticsService, RecommendationAnalyticsService>();
 
         // Services
+        services.AddSingleton<ISignalRService, NullSignalRService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<BackgroundJobExecutor>();
@@ -159,6 +160,7 @@ public static class DependencyInjection
         services.AddScoped<IRecommendationService, RecommendationService>();
 
         // Dependencies of RecommendationService
+        services.AddSingleton<ISignalRService, NullSignalRService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IKafkaPublisher, MockKafkaPublisher>();
         services.AddScoped<IGoalTrackingService, GoalTrackingService>();

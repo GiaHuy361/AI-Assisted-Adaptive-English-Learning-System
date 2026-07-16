@@ -73,11 +73,13 @@ public class CreateQuestionCommandHandler : IRequestHandler<CreateQuestionComman
 {
     private readonly IRepository<Question> _questionRepository;
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public CreateQuestionCommandHandler(IRepository<Question> questionRepository, IRepository<Quiz> quizRepository)
+    public CreateQuestionCommandHandler(IRepository<Question> questionRepository, IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _questionRepository = questionRepository;
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<QuestionDetailDto>> Handle(CreateQuestionCommand request, CancellationToken cancellationToken)
@@ -136,6 +138,12 @@ public class CreateQuestionCommandHandler : IRequestHandler<CreateQuestionComman
             question.Score
         );
 
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Question", "Create", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<QuestionDetailDto>.SuccessResponse(dto, "Question created in Bank successfully.");
     }
 }
@@ -160,12 +168,14 @@ public class UpdateQuestionCommandHandler : IRequestHandler<UpdateQuestionComman
     private readonly IRepository<Question> _questionRepository;
     private readonly IRepository<AnswerOption> _optionRepository;
     private readonly IRepository<Quiz> _quizRepository;
+    private readonly ISignalRService _signalRService;
 
-    public UpdateQuestionCommandHandler(IRepository<Question> questionRepository, IRepository<AnswerOption> optionRepository, IRepository<Quiz> quizRepository)
+    public UpdateQuestionCommandHandler(IRepository<Question> questionRepository, IRepository<AnswerOption> optionRepository, IRepository<Quiz> quizRepository, ISignalRService signalRService)
     {
         _questionRepository = questionRepository;
         _optionRepository = optionRepository;
         _quizRepository = quizRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<QuestionDetailDto>> Handle(UpdateQuestionCommand request, CancellationToken cancellationToken)
@@ -232,6 +242,12 @@ public class UpdateQuestionCommandHandler : IRequestHandler<UpdateQuestionComman
             question.Score
         );
 
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Question", "Update", dto);
+        }
+        catch (Exception) { }
+
         return ApiResponse<QuestionDetailDto>.SuccessResponse(dto, "Question updated successfully.");
     }
 }
@@ -243,11 +259,13 @@ public class DeleteQuestionCommandHandler : IRequestHandler<DeleteQuestionComman
 {
     private readonly IRepository<Question> _questionRepository;
     private readonly IRepository<AnswerOption> _optionRepository;
+    private readonly ISignalRService _signalRService;
 
-    public DeleteQuestionCommandHandler(IRepository<Question> questionRepository, IRepository<AnswerOption> optionRepository)
+    public DeleteQuestionCommandHandler(IRepository<Question> questionRepository, IRepository<AnswerOption> optionRepository, ISignalRService signalRService)
     {
         _questionRepository = questionRepository;
         _optionRepository = optionRepository;
+        _signalRService = signalRService;
     }
 
     public async Task<ApiResponse<bool>> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
@@ -264,6 +282,12 @@ public class DeleteQuestionCommandHandler : IRequestHandler<DeleteQuestionComman
 
         await _questionRepository.DeleteAsync(question);
         await _questionRepository.SaveChangesAsync();
+
+        try
+        {
+            await _signalRService.SendCrudUpdateAsync("Question", "Delete", new { Id = request.Id });
+        }
+        catch (Exception) { }
 
         return ApiResponse<bool>.SuccessResponse(true, "Question deleted successfully.");
     }

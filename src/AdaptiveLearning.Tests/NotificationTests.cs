@@ -11,6 +11,8 @@ using CoreLearningSystem.Domain.Enums;
 using CoreLearningSystem.Infrastructure.Persistence;
 using CoreLearningSystem.Infrastructure.Services;
 using CoreLearningSystem.Application.DTOs.Common;
+using CoreLearningSystem.Application.Interfaces;
+using Moq;
 
 namespace AdaptiveLearning.Tests;
 
@@ -44,7 +46,8 @@ public class NotificationTests : IDisposable
         _context.SaveChanges();
 
         var mockPublisher = new MockKafkaPublisher();
-        _service = new NotificationService(_context, mockPublisher, new NullLogger<NotificationService>());
+        var mockSignalR = new Mock<ISignalRService>().Object;
+        _service = new NotificationService(_context, mockPublisher, mockSignalR, new NullLogger<NotificationService>());
     }
 
     [Fact]

@@ -27,15 +27,18 @@ public class NotificationService : INotificationService
 {
     private readonly AppDbContext _context;
     private readonly IKafkaPublisher _kafkaPublisher;
+    private readonly ISignalRService _signalRService;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         AppDbContext context,
         IKafkaPublisher kafkaPublisher,
+        ISignalRService signalRService,
         ILogger<NotificationService> logger)
     {
         _context = context;
         _kafkaPublisher = kafkaPublisher;
+        _signalRService = signalRService;
         _logger = logger;
     }
 
@@ -100,7 +103,19 @@ public class NotificationService : INotificationService
             _logger.LogError(ex, "Failed to publish NotificationCreatedEvent for NotificationId: {Id} (Dual-write limitation).", notification.Id);
         }
 
-        return MapToDetailsDto(notification);
+        var dto = MapToDetailsDto(notification);
+
+        // Send via SignalR
+        try
+        {
+            await _signalRService.SendNotificationAsync(notification.UserId, dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send real-time notification via SignalR for NotificationId: {Id}.", notification.Id);
+        }
+
+        return dto;
     }
 
     public async Task<bool> MarkAsReadAsync(int notificationId, int userId, CancellationToken cancellationToken = default)
