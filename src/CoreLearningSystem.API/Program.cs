@@ -139,6 +139,39 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     Authorization = new[] { new AllowAllHangfireAuthorizationFilter() }
 });
 
+
+app.MapGet("/", async context =>
+{
+    context.Response.ContentType = "text/html; charset=utf-8";
+    await context.Response.WriteAsync(@"
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Group 05 - API Gateway</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0F172A; color: #F8FAFC; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                .card { background-color: #1E293B; padding: 40px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); text-align: center; border: 1px solid #334155; max-width: 400px; width: 100%; }
+                h1 { color: #38BDF8; margin-bottom: 8px; font-size: 24px; font-weight: 700; }
+                p { color: #94A3B8; margin-bottom: 28px; font-size: 14px; }
+                .btn { display: block; background-color: #0EA5E9; color: white; padding: 14px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: all 0.2s; margin: 12px 0; font-size: 15px; }
+                .btn:hover { background-color: #0284C7; transform: translateY(-1px); }
+                .btn-secondary { background-color: #475569; }
+                .btn-secondary:hover { background-color: #334155; }
+            </style>
+        </head>
+        <body>
+            <div class='card'>
+                <h1>Group 05 - API Gateway</h1>
+                <p>AI-Assisted Adaptive English Learning System</p>
+                <a href='/swagger' class='btn'>🚀 Go to Swagger UI</a>
+                <a href='/hangfire' class='btn btn-secondary'>⏰ Go to Hangfire Dashboard</a>
+            </div>
+        </body>
+        </html>
+    ");
+>>>>>>> feature/huy-backend-adaptive
+});
+
 app.MapControllers();
 app.MapHealthChecks("/health");
 
