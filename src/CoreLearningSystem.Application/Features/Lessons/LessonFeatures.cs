@@ -278,9 +278,9 @@ public class GetLessonByIdQueryHandler : IRequestHandler<GetLessonByIdQuery, Api
         {
             var profiles = await _profileRepository.FindAsync(p => p.UserId == request.CurrentUserId.Value);
             var currentProfile = profiles.FirstOrDefault();
-            if (currentProfile != null && lesson.Level != currentProfile.Level)
+            if (currentProfile != null && lesson.Level > currentProfile.Level)
             {
-                return ApiResponse<LessonDto>.FailureResponse("Forbidden", "Bạn không có quyền truy cập vào bài học thuộc cấp độ khác.");
+                return ApiResponse<LessonDto>.FailureResponse("Forbidden", "Bạn không có quyền truy cập vào bài học thuộc cấp độ cao hơn trình độ hiện tại.");
             }
         }
 
