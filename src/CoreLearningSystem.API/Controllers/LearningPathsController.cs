@@ -26,6 +26,23 @@ public class LearningPathsController : ApiControllerBase
     [HttpGet("{learnerId}")]
     public async Task<ActionResult<ApiResponse<LearningPathDto>>> GetByLearner(int learnerId)
     {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        {
+            var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role);
+            if (roleClaim != null && roleClaim.Value == "Learner")
+            {
+                var dbContext = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+                    .GetRequiredService<CoreLearningSystem.Infrastructure.Persistence.AppDbContext>(HttpContext.RequestServices);
+                var profile = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                    .FirstOrDefaultAsync(dbContext.LearnerProfiles, p => p.UserId == userId);
+                if (profile != null)
+                {
+                    learnerId = profile.Id;
+                }
+            }
+        }
+
         var result = await Mediator.Send(new GetLearningPathQuery(learnerId));
         if (!result.Success) return NotFound(result);
         return Ok(result);
