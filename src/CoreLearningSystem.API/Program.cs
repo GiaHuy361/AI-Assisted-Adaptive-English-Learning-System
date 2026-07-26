@@ -165,7 +165,7 @@ app.MapGet("/", async context =>
         </body>
         </html>
     ");
-});
+}).ExcludeFromDescription();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
